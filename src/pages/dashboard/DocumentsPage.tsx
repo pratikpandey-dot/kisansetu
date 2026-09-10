@@ -11,16 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   CheckCircle2,
   FileText,
@@ -270,19 +260,6 @@ export default function DocumentsPage() {
         </>
       )}
 
-      {/* Hidden dialog to satisfy a11y lint; not used at runtime */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <span className="hidden" />
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t.docs.title}</DialogTitle>
-            <DialogDescription>{t.docs.subtitle}</DialogDescription>
-          </DialogHeader>
-          <Label>{t.docs.status}</Label>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

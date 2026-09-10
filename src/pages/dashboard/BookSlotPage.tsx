@@ -98,11 +98,16 @@ export default function BookSlotPage() {
 
   const selectedSlot = slots?.find((s) => s._id === selected);
 
+  const canBook =
+    verified && !hasActive && farmer !== undefined && farmer !== null;
+
   const confirm = async () => {
     if (!selected) return;
     setSaving(true);
     try {
-      const res = await bookMutation({ slotId: selected });
+      const res = await bookMutation({
+        slotId: selected as Parameters<typeof bookMutation>[0]["slotId"],
+      });
       toast.success(`${t.booking.bookedToast}: ${res.token}`);
       setSelected(null);
       setConfirming(false);
@@ -209,7 +214,9 @@ export default function BookSlotPage() {
       {slots !== undefined && grouped.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            {t.common.loading}
+            {lang === "hi"
+              ? "इस दिन के लिए कोई स्लॉट नहीं मिला।"
+              : "No slots available for this day."}
           </CardContent>
         </Card>
       )}
@@ -265,7 +272,7 @@ export default function BookSlotPage() {
                       <Button
                         size="sm"
                         className="w-full"
-                        disabled={full || !verified || hasActive}
+                        disabled={full || !canBook}
                         onClick={() => {
                           setSelected(s._id);
                           setConfirming(true);
@@ -313,7 +320,10 @@ export default function BookSlotPage() {
             >
               {t.booking.cancel}
             </Button>
-            <Button onClick={confirm} disabled={saving || !selected}>
+            <Button
+              onClick={confirm}
+              disabled={saving || !selected}
+            >
               {saving ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (

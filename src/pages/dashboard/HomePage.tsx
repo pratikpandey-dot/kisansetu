@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/Logo";
 import {
-  BookSlotIcon,
+  CalendarClock,
   Clock,
   FileCheck2,
   MapPin,
@@ -146,8 +146,8 @@ export default function HomePage() {
               <p className="mt-1 text-4xl font-extrabold text-primary">
                 {active.position}
                 <span className="text-lg font-semibold text-muted-foreground">
-                  {t.home.of}
-                  {active.totalInQueue}
+                  {" "}
+                  / {active.totalInQueue}
                 </span>
               </p>
               <p className="text-sm text-muted-foreground">
@@ -197,7 +197,7 @@ export default function HomePage() {
           {[
             {
               to: "/dashboard/book",
-              icon: BookSlotIcon,
+              icon: CalendarClock,
               label: t.home.bookSlot,
             },
             {

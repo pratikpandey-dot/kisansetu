@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
 import {
-  BookSlotIcon,
+  CalendarClock,
   FileCheck2,
   History,
   Home,
@@ -20,9 +20,11 @@ import {
   LifeBuoy,
   LogOut,
   Menu,
+  Moon,
   Receipt,
   Scale,
   Settings,
+  Sun,
   Tags,
   User,
   X,
@@ -34,7 +36,7 @@ const NAV = [
   { to: "/dashboard", key: "home", icon: Home },
   { to: "/dashboard/register", key: "register", icon: User },
   { to: "/dashboard/documents", key: "documents", icon: FileCheck2 },
-  { to: "/dashboard/book", key: "bookSlot", icon: BookSlotIcon },
+  { to: "/dashboard/book", key: "bookSlot", icon: CalendarClock },
   { to: "/dashboard/queue", key: "queue", icon: Scale },
   { to: "/dashboard/prices", key: "prices", icon: Tags },
   { to: "/dashboard/history", key: "history", icon: Receipt },

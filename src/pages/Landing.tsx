@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   BookOpenCheck,
   ChevronRight,
-  FileCheck2,
   Gauge,
   IndianRupee,
   Leaf,
@@ -26,10 +25,6 @@ export default function Landing() {
 
   const farmerCount = 18000 + (stats?.farmers ?? 0);
   const slotCount = 900 + (stats?.bookings ?? 0);
-
-  const features = [
-    { icon: FileCheck2, ...t.landing, key: 1 },
-  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">

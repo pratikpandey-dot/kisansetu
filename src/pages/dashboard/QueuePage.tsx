@@ -75,7 +75,7 @@ export default function QueuePage() {
         <div className="h-64 animate-pulse rounded-2xl bg-muted" />
       )}
 
-      {booking !== undefined && !active && (
+      {booking !== undefined && booking !== null && !active && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
@@ -91,7 +91,7 @@ export default function QueuePage() {
               <Link to="/dashboard/book">{t.queue.bookNow}</Link>
             </Button>
             {/* history */}
-            {booking.history.length > 0 && (
+            {booking && booking.history.length > 0 && (
               <div className="w-full max-w-md pt-4 text-left">
                 <Separator className="mb-4" />
                 <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
@@ -148,7 +148,6 @@ export default function QueuePage() {
                   {active.position}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {t.home.of}
                   {active.totalInQueue} {t.home.inQueue}
                 </p>
               </div>

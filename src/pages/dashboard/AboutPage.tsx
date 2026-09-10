@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 export default function AboutPage() {
-  const { t } = useApp();
+  const { t, lang } = useApp();
 
   const steps = [
     { icon: Tractor, title: t.landing.how1, body: t.landing.how1Body },
