@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
+  <!-- rising sun over field -->
+  <circle cx="24" cy="26" r="7" fill="#fbbf24"/>
+  <circle cx="24" cy="26" r="10" fill="#fbbf24" opacity="0.25"/>
+  <!-- wheat stalks -->
+  <g stroke="#dcfce7" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <path d="M20 52 C 20 42, 21 36, 22 31"/>
+    <path d="M31 52 C 31 44, 32 39, 33 35"/>
+    <path d="M42 52 C 42 43, 43 38, 44 34"/>
+  </g>
+  <g fill="#dcfce7">
+    <ellipse cx="19" cy="30" rx="2.4" ry="4" transform="rotate(-35 19 30)"/>
+    <ellipse cx="25" cy="30" rx="2.4" ry="4" transform="rotate(35 25 30)"/>
+    <ellipse cx="21.5" cy="25" rx="2.4" ry="4"/>
+    <ellipse cx="30" cy="34" rx="2.4" ry="4" transform="rotate(-35 30 34)"/>
+    <ellipse cx="36" cy="34" rx="2.4" ry="4" transform="rotate(35 36 34)"/>
+    <ellipse cx="33" cy="29" rx="2.4" ry="4"/>
+    <ellipse cx="41" cy="33" rx="2.4" ry="4" transform="rotate(-35 41 33)"/>
+    <ellipse cx="47" cy="33" rx="2.4" ry="4" transform="rotate(35 47 33)"/>
+    <ellipse cx="44" cy="28" rx="2.4" ry="4"/>
+  </g>
+  <!-- soil line -->
+  <rect x="12" y="51" width="40" height="3" rx="1.5" fill="#dcfce7" opacity="0.9"/>
+</svg>
