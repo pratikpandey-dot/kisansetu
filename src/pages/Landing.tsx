@@ -24,8 +24,9 @@ export default function Landing() {
   const { t } = useApp();
   const stats = useQuery(api.procurement.getStats);
 
-  const farmerCount = 18000 + (stats?.farmers ?? 0);
-  const slotCount = 900 + (stats?.bookings ?? 0);
+  // Live platform stats — start at 0 and grow as real farmers register/book.
+  const farmerCount = stats?.farmers ?? 0;
+  const slotCount = stats?.bookings ?? 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -124,12 +125,12 @@ export default function Landing() {
           >
             {[
               {
-                value: farmerCount.toLocaleString("en-IN") + "+",
+                value: farmerCount.toLocaleString("en-IN"),
                 label: t.landing.statFarmers,
               },
-              { value: String(stats?.centers || 3), label: t.landing.statCentres },
+              { value: String(stats?.centers ?? 0), label: t.landing.statCentres },
               {
-                value: slotCount.toLocaleString("en-IN") + "+",
+                value: slotCount.toLocaleString("en-IN"),
                 label: t.landing.statSlots,
               },
             ].map((s) => (

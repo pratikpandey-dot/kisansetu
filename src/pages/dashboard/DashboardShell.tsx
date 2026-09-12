@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useApp, LANGS, type Lang } from "@/lib/i18n";
+import { useApp, LANGS } from "@/lib/i18n";
 import { KisanMitra } from "@/components/KisanMitra";
 import {
   DropdownMenu,
@@ -15,7 +15,6 @@ import { Logo } from "@/components/Logo";
 import {
   CalendarClock,
   FileCheck2,
-  History,
   Home,
   Info,
   LifeBuoy,
@@ -74,25 +73,25 @@ export function DashboardShell({
   }));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-secondary/40 via-background to-background">
       {/* ---------- top bar ---------- */}
-      <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b bg-gradient-to-r from-emerald-800 via-emerald-900 to-teal-900 text-white shadow-lg shadow-emerald-950/10 backdrop-blur">
         <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="text-white hover:bg-white/15 hover:text-white lg:hidden"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </Button>
             <Link to="/dashboard" className="flex items-center gap-2.5">
-              <Logo className="size-9 rounded-lg" />
+              <Logo className="size-9 rounded-lg shadow-md shadow-emerald-950/30" />
               <div className="hidden leading-tight sm:block">
-                <span className="block text-sm font-bold">{t.brand}</span>
-                <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">
+                <span className="block text-sm font-bold text-white">{t.brand}</span>
+                <span className="block text-[10px] uppercase tracking-widest text-emerald-200/80">
                   {t.common.dashboard}
                 </span>
               </div>
@@ -101,7 +100,7 @@ export function DashboardShell({
 
           <div className="flex items-center gap-1.5">
             {/* all-language quick chips (digital divide: switch anytime) */}
-            <div className="hidden items-center gap-0.5 rounded-full border p-0.5 md:flex">
+            <div className="hidden items-center gap-0.5 rounded-full border border-white/20 bg-white/10 p-0.5 md:flex">
               {LANGS.map((l) => (
                 <button
                   key={l.code}
@@ -109,8 +108,8 @@ export function DashboardShell({
                   className={cn(
                     "rounded-full px-2 py-1 text-xs font-semibold transition-colors",
                     lang === l.code
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                      ? "bg-white text-emerald-900 shadow-sm"
+                      : "text-emerald-100/90 hover:bg-white/15 hover:text-white",
                   )}
                   title={l.label}
                 >
@@ -124,7 +123,7 @@ export function DashboardShell({
                 const idx = LANGS.findIndex((l) => l.code === lang);
                 setLang(LANGS[(idx + 1) % LANGS.length].code);
               }}
-              className="rounded-full border px-3 py-1.5 text-xs font-semibold hover:bg-accent md:hidden"
+              className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 md:hidden"
               title={t.settings.language}
             >
               {LANGS.find((l) => l.code === lang)?.short ?? "EN"}
@@ -132,8 +131,10 @@ export function DashboardShell({
             <button
               onClick={() => setEasyMode(!easyMode)}
               className={cn(
-                "rounded-full border p-2 transition-colors hover:bg-accent",
-                easyMode && "border-primary bg-primary/10 text-primary",
+                "rounded-full border border-white/25 p-2 transition-colors hover:bg-white/15",
+                easyMode
+                  ? "border-amber-300/60 bg-amber-300/25 text-amber-100"
+                  : "text-white",
               )}
               aria-label={t.easy.enable}
               title={t.easy.enable}
@@ -142,7 +143,7 @@ export function DashboardShell({
             </button>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-full border p-2 hover:bg-accent"
+              className="rounded-full border border-white/25 p-2 text-white hover:bg-white/15"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
@@ -153,9 +154,9 @@ export function DashboardShell({
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="ml-1 flex items-center gap-2 rounded-full border py-1 pl-1 pr-2.5 hover:bg-accent">
+                <button className="ml-1 flex items-center gap-2 rounded-full border border-white/25 bg-white/10 py-1 pl-1 pr-2.5 text-white hover:bg-white/20">
                   <Avatar className="size-7">
-                    <AvatarFallback className="bg-primary/15 text-xs font-bold text-primary">
+                    <AvatarFallback className="bg-emerald-300 text-xs font-bold text-emerald-950">
                       {displayName.slice(0, 1).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -194,7 +195,7 @@ export function DashboardShell({
         </div>
 
         {/* ---------- desktop nav ---------- */}
-        <nav className="hidden border-t lg:block">
+        <nav className="hidden border-t border-white/10 bg-emerald-950/40 lg:block">
           <div className="flex items-center gap-1 overflow-x-auto px-4 sm:px-6">
             {navItems.map((item) => (
               <NavLink
@@ -204,8 +205,8 @@ export function DashboardShell({
                 className={({ isActive }) =>
                   `flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                      ? "border-amber-300 text-amber-200"
+                      : "border-transparent text-emerald-100/70 hover:text-white"
                   }`
                 }
               >
@@ -218,7 +219,7 @@ export function DashboardShell({
 
         {/* ---------- mobile drawer ---------- */}
         {mobileOpen && (
-          <div className="border-t bg-card lg:hidden">
+          <div className="border-t border-white/10 bg-emerald-900 text-white lg:hidden">
             <nav className="grid gap-1 p-3">
               {navItems.map((item) => (
                 <NavLink
@@ -229,8 +230,8 @@ export function DashboardShell({
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        ? "bg-white/15 text-white"
+                        : "text-emerald-100/80 hover:bg-white/10 hover:text-white"
                     }`
                   }
                 >
