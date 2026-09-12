@@ -39,6 +39,7 @@ const en = {
   tagline: "Your direct bridge to fair procurement",
   nav: {
     home: "Home",
+    insights: "AI Insights",
     register: "Register",
     documents: "Documents",
     bookSlot: "Book Slot",
@@ -222,6 +223,7 @@ const en = {
     searchPlaceholder: "Search crops…",
   },
   history: {
+    viewReceipt: "View receipt",
     title: "Transaction history",
     subtitle: "Payments for your sold produce",
     ref: "Reference",
@@ -303,6 +305,21 @@ const en = {
     footer:
       "This is a computer-generated receipt and does not require a signature.",
     support: "Queries? Call 1800-180-1551",
+  },
+  insights: {
+    title: "AI Insights",
+    subtitle: "Smart summary of your sales, payments and next steps",
+    generate: "Generate insights",
+    refresh: "Refresh insights",
+    refreshed: "Insights updated",
+    empty: "No insights yet. Tap “Generate insights” to see your summary.",
+    needRegistration:
+      "Complete your farmer registration first — insights unlock after that.",
+    cardTitle: "Today's insights",
+    aiPowered: "AI-powered",
+    howTitle: "How this works",
+    howBody:
+      "Kisan Mitra reads your transactions, payments, documents and live queue status, then writes a simple summary in your language. Nothing leaves Kisan Setu — and if the AI key is missing, you still get rule-based tips.",
   },
   chat: {
     title: "Kisan Mitra",
@@ -643,6 +660,21 @@ const hi: Overrides = {
     footer: "यह कंप्यूटर-जनित रसीद है, हस्ताक्षर की आवश्यकता नहीं।",
     support: "सवाल? कॉल करें 1800-180-1551",
   },
+  insights: {
+    title: "AI इनसाइट्स",
+    subtitle: "आपकी बिक्री, भुगतान और अगले कदमों का स्मार्ट सारांश",
+    generate: "इनसाइट बनाएं",
+    refresh: "इनसाइट रिफ्रेश करें",
+    refreshed: "इनसाइट अपडेट हुईं",
+    empty: "अभी कोई इनसाइट नहीं। \"इनसाइट बनाएं\" दबाकर सारांश देखें।",
+    needRegistration:
+      "पहले किसान पंजीकरण पूरा करें — इसके बाद इनसाइट उपलब्ध होंगी।",
+    cardTitle: "आज की इनसाइट",
+    aiPowered: "AI संचालित",
+    howTitle: "यह कैसे काम करता है",
+    howBody:
+      "किसान मित्र आपके लेन-देन, भुगतान, दस्तावेज़ और लाइव कतार देखकर आपकी भाषा में आसान सारांश लिखता है। कुछ भी किसान सेतु से बाहर नहीं जाता — और AI कुंजी न होने पर भी नियम-आधारित सुझाव मिलते हैं।",
+  },
   chat: {
     title: "किसान मित्र",
     subtitle: "AI सहायक · आपकी भाषा में जवाब",
@@ -939,6 +971,20 @@ const mr: Overrides = {
     token: "रांग टोकन",
     footer: "ही संगणक-निर्मित पावती आहे, स्वाक्षरीची गरज नाही.",
     support: "प्रश्न? कॉल करा 1800-180-1551",
+  },
+  insights: {
+    title: "AI इनसाइट्स",
+    subtitle: "तुमच्या विक्री, पेमेंट आणि पुढील पावलींचा स्मार्ट सारांश",
+    generate: "इनसाइट तयार करा",
+    refresh: "इनसाइट रिफ्रेश करा",
+    refreshed: "इनसाइट अद्ययावत झाल्या",
+    empty: "अजून इनसाइट नाही. \"इनसाइट तयार करा\" दाबा.",
+    needRegistration: "प्रथम शेतकरी नोंदणी पूर्ण करा — त्यानंतर इनसाइट मिळतील.",
+    cardTitle: "आजच्या इनसाइट्स",
+    aiPowered: "AI संचालित",
+    howTitle: "हे कसे कार्य करते",
+    howBody:
+      "किसान मित्र तुमची व्यवहार, पेमेंट, कागदपत्रे आणि थेट रांग पाहून तुमच्या भाषेत सोपा सारांश लिहितो. काहीही किसान सेतूबाहेर जात नाही — आणि AI की नसल्यासही नियम-आधारित सल्ले मिळतात.",
   },
   chat: {
     title: "किसान मित्र",

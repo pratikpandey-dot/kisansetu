@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useApp, type Lang } from "@/lib/i18n";
+import { useApp, LANGS, type Lang } from "@/lib/i18n";
+import { KisanMitra } from "@/components/KisanMitra";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ import {
   Receipt,
   Scale,
   Settings,
+  Sparkles,
   Sun,
   Tags,
   User,
@@ -31,9 +33,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
+import { cn } from "@/lib/utils";
+import { Accessibility } from "lucide-react";
 
 const NAV = [
   { to: "/dashboard", key: "home", icon: Home },
+  { to: "/dashboard/insights", key: "insights", icon: Sparkles },
   { to: "/dashboard/register", key: "register", icon: User },
   { to: "/dashboard/documents", key: "documents", icon: FileCheck2 },
   { to: "/dashboard/book", key: "bookSlot", icon: CalendarClock },
@@ -49,7 +54,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const { user, signOut } = useAuth();
-  const { t, lang, setLang, theme, setTheme } = useApp();
+  const { t, lang, setLang, theme, setTheme, easyMode, setEasyMode } = useApp();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -95,12 +100,45 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* all-language quick chips (digital divide: switch anytime) */}
+            <div className="hidden items-center gap-0.5 rounded-full border p-0.5 md:flex">
+              {LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  className={cn(
+                    "rounded-full px-2 py-1 text-xs font-semibold transition-colors",
+                    lang === l.code
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                  title={l.label}
+                >
+                  {l.short}
+                </button>
+              ))}
+            </div>
+            {/* compact language chip on small screens */}
             <button
-              onClick={() => setLang(lang === "en" ? "hi" : "en")}
-              className="rounded-full border px-3 py-1.5 text-xs font-semibold hover:bg-accent"
-              title="EN / हिंदी"
+              onClick={() => {
+                const idx = LANGS.findIndex((l) => l.code === lang);
+                setLang(LANGS[(idx + 1) % LANGS.length].code);
+              }}
+              className="rounded-full border px-3 py-1.5 text-xs font-semibold hover:bg-accent md:hidden"
+              title={t.settings.language}
             >
-              {lang === "en" ? "EN" : "हिं"}
+              {LANGS.find((l) => l.code === lang)?.short ?? "EN"}
+            </button>
+            <button
+              onClick={() => setEasyMode(!easyMode)}
+              className={cn(
+                "rounded-full border p-2 transition-colors hover:bg-accent",
+                easyMode && "border-primary bg-primary/10 text-primary",
+              )}
+              aria-label={t.easy.enable}
+              title={t.easy.enable}
+            >
+              <Accessibility className="size-4" />
             </button>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -208,6 +246,8 @@ export function DashboardShell({
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         {children}
       </main>
+
+      <KisanMitra />
 
       <footer className="border-t py-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:px-6">

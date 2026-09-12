@@ -1,5 +1,6 @@
 import { DashboardShell } from "./dashboard/DashboardShell";
 import HomePage from "./dashboard/HomePage";
+import InsightsPage from "./dashboard/InsightsPage";
 import RegisterPage from "./dashboard/RegisterPage";
 import DocumentsPage from "./dashboard/DocumentsPage";
 import BookSlotPage from "./dashboard/BookSlotPage";
@@ -17,6 +18,7 @@ export default function Dashboard() {
     <DashboardShell>
       <Routes>
         <Route index element={<HomePage />} />
+        <Route path="insights" element={<InsightsPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="book" element={<BookSlotPage />} />

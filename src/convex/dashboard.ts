@@ -104,3 +104,44 @@ export const seedSlotsForDay = mutation({
     return { seeded };
   },
 });
+
+/* ------------------------- AI insights cache ------------------------- */
+
+export const getMyInsight = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return null;
+    return await ctx.db
+      .query("insights")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+  },
+});
+
+export const saveInsight = mutation({
+  args: { text: v.string(), online: v.boolean() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not signed in");
+    const existing = await ctx.db
+      .query("insights")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+    const generatedAt = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        text: args.text,
+        online: args.online,
+        generatedAt,
+      });
+      return existing._id;
+    }
+    return await ctx.db.insert("insights", {
+      userId,
+      text: args.text,
+      online: args.online,
+      generatedAt,
+    });
+  },
+});

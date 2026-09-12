@@ -123,6 +123,15 @@ const schema = defineSchema(
       pricePerQuintal: v.number(),
       updatedAt: v.number(),
     }).index("by_crop", ["crop"]),
+
+    // Cached AI insights per user (regenerated on demand).
+    insights: defineTable({
+      userId: v.id("users"),
+      text: v.string(),
+      // generated with the LLM key, or fell back to rule-based output
+      online: v.boolean(),
+      generatedAt: v.number(),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,

@@ -17,11 +17,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Receipt } from "lucide-react";
+import { ReceiptDialog, type ReceiptTx } from "@/components/ReceiptDialog";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function HistoryPage() {
   const { t } = useApp();
+  const { user } = useAuth();
   const txs = useQuery(api.dashboard.getMyTransactions);
+  const [receiptTx, setReceiptTx] = useState<ReceiptTx | null>(null);
 
   const paid = (txs ?? [])
     .filter((x) => x.status === "paid")
@@ -95,11 +101,12 @@ export default function HistoryPage() {
                     <TableHead className="text-right">{t.history.rate}</TableHead>
                     <TableHead className="text-right">{t.history.amount}</TableHead>
                     <TableHead className="text-right">{t.history.status}</TableHead>
+                    <TableHead className="text-right">{t.history.viewReceipt}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {txs.map((tx) => (
-                    <TableRow key={tx._id}>
+                    <TableRow key={tx._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setReceiptTx(tx)}>
                       <TableCell className="font-mono text-xs">
                         {tx.reference}
                       </TableCell>
@@ -122,6 +129,19 @@ export default function HistoryPage() {
                           <Badge variant="secondary">{t.history.pending}</Badge>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReceiptTx(tx);
+                          }}
+                        >
+                          <Receipt className="size-4" />
+                          {t.history.viewReceipt}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -130,6 +150,15 @@ export default function HistoryPage() {
           )}
         </CardContent>
       </Card>
+
+      <ReceiptDialog
+        tx={receiptTx}
+        farmerName={user?.name ?? ""}
+        open={receiptTx !== null}
+        onOpenChange={(v) => {
+          if (!v) setReceiptTx(null);
+        }}
+      />
     </div>
   );
 }
