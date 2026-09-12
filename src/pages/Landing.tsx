@@ -152,7 +152,7 @@ export default function Landing() {
             procurement centre.
           </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-3">
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               icon: ShieldCheck,
@@ -168,6 +168,11 @@ export default function Landing() {
               icon: Radio,
               title: t.landing.feature3Title,
               body: t.landing.feature3Body,
+            },
+            {
+              icon: Sparkles,
+              title: t.landing.feature4Title,
+              body: t.landing.feature4Body,
             },
           ].map((f, i) => (
             <motion.div

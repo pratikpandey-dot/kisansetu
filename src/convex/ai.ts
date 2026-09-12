@@ -2,7 +2,7 @@
 
 import { v } from "convex/values";
 import { action } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import { api } from "./_generated/api";
 import { createVlyIntegrations } from "@vly-ai/integrations";
 
 const MODEL = "gpt-4o-mini";
@@ -52,7 +52,10 @@ export const askMitra = action({
     question: v.string(),
     lang: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ answer: string; online: boolean }> => {
     const [farmer, booking, txs, rates] = await Promise.all([
       ctx.runQuery(api.farmers.getMyFarmer),
       ctx.runQuery(api.bookings.getMyBooking),
@@ -159,7 +162,7 @@ function offlineChat(
 
 export const askInsights = action({
   args: { lang: v.string() },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<void> => {
     const [farmer, txs, docs, rates, booking] = await Promise.all([
       ctx.runQuery(api.farmers.getMyFarmer),
       ctx.runQuery(api.dashboard.getMyTransactions),
@@ -175,7 +178,7 @@ export const askInsights = action({
         args.lang === "hi"
           ? "पहले अपना किसान पंजीकरण पूरा करें, फिर एआई इनसाइट्स उपलब्ध होंगी।"
           : "Complete your farmer registration first — AI insights will unlock after that.";
-      await ctx.runMutation(internal.dashboard.saveInsight, { text: msg, online: false });
+      await ctx.runMutation(api.dashboard.saveInsight, { text: msg, online: false });
       return;
     }
 
@@ -219,7 +222,7 @@ export const askInsights = action({
         ? `• कुल प्राप्त भुगतान: ₹${totalPaid.toLocaleString("en-IN")}\n• लंबित भुगतान: ₹${totalPending.toLocaleString("en-IN")}\n• सबसे अच्छी फ़सल: ${topCrop?.[0] ?? "—"}\n• सत्यापन स्थिति: ${farmer.verificationStatus}`
         : `• Total received: ₹${totalPaid.toLocaleString("en-IN")}\n• Awaiting payment: ₹${totalPending.toLocaleString("en-IN")}\n• Best crop: ${topCrop?.[0] ?? "—"}\n• Verification: ${farmer.verificationStatus}`);
 
-    await ctx.runMutation(internal.dashboard.saveInsight, {
+    await ctx.runMutation(api.dashboard.saveInsight, {
       text: finalText,
       online: text !== null,
     });
