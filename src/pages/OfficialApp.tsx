@@ -20,7 +20,6 @@ import {
   Wallet,
   CalendarClock,
   XCircle,
-  ChevronLeft,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -115,7 +114,7 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 /* ------------------------------------------------------------------ */
 
 function OfficialAppInner() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { t } = useApp();
   const navigate = useNavigate();
   const myOfficial = useQuery(api.officials.getMyOfficial);

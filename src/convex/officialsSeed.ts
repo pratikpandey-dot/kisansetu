@@ -1,5 +1,4 @@
 import { mutation } from "./_generated/server";
-import { v } from "convex/values";
 
 /** Seeds demo government-official accounts (idempotent). */
 export const ensureOfficialsSeed = mutation({
