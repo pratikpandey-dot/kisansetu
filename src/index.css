@@ -133,3 +133,66 @@
     cursor: pointer;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Easy Mode (digital-divide accessibility) — toggled by html.easy      */
+/* ------------------------------------------------------------------ */
+
+html.easy {
+  font-size: 19px;
+}
+
+html.easy body {
+  font-weight: 500;
+}
+
+html.easy h1 {
+  font-size: 2.1rem !important;
+}
+html.easy h2 {
+  font-size: 1.5rem !important;
+}
+
+html.easy button,
+html.easy [role="button"],
+html.easy a[class*="Button"],
+html.easy input,
+html.easy select,
+html.easy textarea {
+  min-height: 3rem;
+  font-size: 1.05rem !important;
+}
+
+html.easy .easy-hide {
+  display: none !important;
+}
+
+/* Reduced motion + bigger tap targets */
+html.easy *,
+html.easy *::before,
+html.easy *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 80ms !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Payment receipt printing                                            */
+/* ------------------------------------------------------------------ */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print,
+  .receipt-print * {
+    visibility: visible;
+  }
+  .receipt-print {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

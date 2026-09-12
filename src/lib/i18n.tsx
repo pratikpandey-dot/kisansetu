@@ -7,8 +7,32 @@ import {
   type ReactNode,
 } from "react";
 
-export type Lang = "en" | "hi";
+export type Lang = "en" | "hi" | "mr" | "bn" | "ta" | "te";
 export type Theme = "light" | "dark";
+
+/** UI languages with native labels + BCP-47 locales for speech (STT/TTS). */
+export const LANGS: {
+  code: Lang;
+  label: string;
+  native: string;
+  short: string;
+  locale: string;
+}[] = [
+  { code: "en", label: "English", native: "English", short: "EN", locale: "en-IN" },
+  { code: "hi", label: "Hindi", native: "हिंदी", short: "हिं", locale: "hi-IN" },
+  { code: "mr", label: "Marathi", native: "मराठी", short: "मर", locale: "mr-IN" },
+  { code: "bn", label: "Bengali", native: "বাংলা", short: "বাং", locale: "bn-IN" },
+  { code: "ta", label: "Tamil", native: "தமிழ்", short: "தமி", locale: "ta-IN" },
+  { code: "te", label: "Telugu", native: "తెలుగు", short: "తెలు", locale: "te-IN" },
+];
+
+export function localeOf(lang: Lang): string {
+  return LANGS.find((l) => l.code === lang)?.locale ?? "en-IN";
+}
+
+/* ------------------------------------------------------------------ */
+/* English (base dictionary — every other language overrides parts)   */
+/* ------------------------------------------------------------------ */
 
 const en = {
   brand: "Kisan Setu",
@@ -36,6 +60,9 @@ const en = {
     statFarmers: "Farmers registered",
     statCentres: "Procurement centres",
     statSlots: "Slots booked today",
+    featuresTitle: "Everything in one place",
+    featuresSub:
+      "Registration to payment — a single bridge between you and the procurement centre.",
     feature1Title: "Verified in minutes",
     feature1Body:
       "Upload Aadhaar, land record and bank passbook. Our OCR pipeline reads your documents and verifies your profile automatically.",
@@ -45,6 +72,22 @@ const en = {
     feature3Title: "Know your place",
     feature3Body:
       "See exactly how many farmers are ahead of you, and get an SMS when it's almost your turn.",
+    feature4Title: "Kisan Mitra — AI assistant",
+    feature4Body:
+      "Ask by voice or text and get instant answers in your language — about prices, slots, documents and payments.",
+    feature5Title: "Easy Mode for everyone",
+    feature5Body:
+      "Bigger buttons, simpler words and spoken replies, built to bridge the digital divide for first-time internet users.",
+    feature6Title: "Instant payment receipts",
+    feature6Body:
+      "Download or print a verified receipt for every sale the moment payment is made.",
+    langs: "Available in 6 languages — English, हिंदी, मराठी, বাংলা, தமிழ், తెలుగు",
+    highlight1Title: "Live queue, zero crowding",
+    highlight1Body:
+      "Watch farmers ahead of you get served in real time — arrive only when it's your turn.",
+    highlight2Title: "Payments you can trust",
+    highlight2Body:
+      "Every sale is tracked from weighbridge to bank transfer, with MSP rates published in-app.",
     howTitle: "How it works",
     how1: "Create your account",
     how1Body: "Sign in with your email — it takes 30 seconds.",
@@ -199,7 +242,8 @@ const en = {
     helpline: "Helpline (toll free)",
     email: "Email",
     office: "Office",
-    officeAddr: "Bundelkhand Institute of Engineering & Technology, Jhansi, UP 284128",
+    officeAddr:
+      "Bundelkhand Institute of Engineering & Technology, Jhansi, UP 284128",
     hours: "Mon–Sat, 8 AM – 6 PM",
     faq: "Frequently asked questions",
     rate: "Rate your experience",
@@ -224,14 +268,62 @@ const en = {
   },
   settings: {
     title: "Settings",
-    subtitle: "Language and appearance",
+    subtitle: "Language, mode and appearance",
     language: "Language",
+    langHint: "Choose the language for the whole app",
+    easyMode: "Easy Mode",
+    easyModeHint:
+      "Bigger text and buttons, simpler words — designed for first-time users",
     theme: "Theme",
     light: "Light",
     dark: "Dark",
     about: "About Kisan Setu",
     aboutBody:
       "Kisan Setu connects farmers directly with government procurement centres: register once, verify your documents, book a slot, and track your queue and payment — all from your phone.",
+  },
+  easy: {
+    enable: "Easy Mode",
+    on: "Easy Mode is on",
+    onBody:
+      "Bigger text, simple words and one-tap actions. Tap the star icon again to turn it off.",
+    voiceHint:
+      "Tip: tap the mic in Kisan Mitra to speak instead of typing.",
+  },
+  receipt: {
+    title: "Payment receipt",
+    view: "Receipt",
+    download: "Download",
+    print: "Print",
+    header: "Govt. Procurement Receipt",
+    ref: "Receipt no.",
+    farmer: "Farmer",
+    paidVia: "Paid via DBT to registered bank account",
+    issued: "Issued",
+    token: "Queue token",
+    footer:
+      "This is a computer-generated receipt and does not require a signature.",
+    support: "Queries? Call 1800-180-1551",
+  },
+  chat: {
+    title: "Kisan Mitra",
+    subtitle: "AI assistant · answers in your language",
+    placeholder: "Ask anything…",
+    send: "Send",
+    listening: "Listening… speak now",
+    thinking: "Thinking…",
+    micBlocked: "Microphone not available. Please type your question.",
+    greeting:
+      "Namaste! I'm Kisan Mitra 🙏 Ask me about prices, slot booking, documents or payments.",
+    quick: "Try asking",
+    q1: "What is today's MSP for wheat?",
+    q2: "How do I book a slot?",
+    q3: "When will I get my payment?",
+    q4: "Which documents do I need?",
+    aiNote: "AI answers can make mistakes. Confirm important details at the centre.",
+    open: "Ask Kisan Mitra",
+    readAloud: "Read answers aloud",
+    offline: "Answered offline (AI key not set)",
+    error: "Sorry, I couldn't answer. Please try again.",
   },
   common: {
     loading: "Loading…",
@@ -245,7 +337,47 @@ const en = {
 
 type Dict = typeof en;
 
-const hi: Dict = {
+type DeepPartial<T> = T extends string | number | boolean | readonly unknown[]
+  ? T
+  : { [K in keyof T]?: DeepPartial<T[K]> };
+
+type Overrides = DeepPartial<Dict>;
+
+/** Recursively merge a partial translation over the English base. */
+function deepMerge(base: unknown, over: unknown): unknown {
+  if (
+    over !== null &&
+    typeof over === "object" &&
+    !Array.isArray(over) &&
+    base !== null &&
+    typeof base === "object" &&
+    !Array.isArray(base)
+  ) {
+    const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    for (const [k, v] of Object.entries(over as Record<string, unknown>)) {
+      out[k] = k in out ? deepMerge(out[k], v) : v;
+    }
+    return out;
+  }
+  return over ?? base;
+}
+
+const cache = new Map<Lang, Dict>();
+
+export function getDict(lang: Lang): Dict {
+  if (lang === "en") return en;
+  const hit = cache.get(lang);
+  if (hit) return hit;
+  const merged = deepMerge(en, OVERRIDES[lang]) as Dict;
+  cache.set(lang, merged);
+  return merged;
+}
+
+/* ------------------------------------------------------------------ */
+/* हिंदी — Hindi                                                       */
+/* ------------------------------------------------------------------ */
+
+const hi: Overrides = {
   brand: "किसान सेतु",
   tagline: "न्यायपूर्ण खरीद के लिए आपका सीधा पुल",
   nav: {
@@ -271,6 +403,8 @@ const hi: Dict = {
     statFarmers: "पंजीकृत किसान",
     statCentres: "खरीद केंद्र",
     statSlots: "आज बुक हुए स्लॉट",
+    featuresTitle: "सब कुछ एक जगह",
+    featuresSub: "पंजीकरण से भुगतान तक — आप और खरीद केंद्र के बीच एक ही पुल।",
     feature1Title: "मिनटों में सत्यापन",
     feature1Body:
       "आधार, भू-अभिलेख और बैंक पासबुक अपलोड करें। हमारी OCR पाइपलाइन आपके दस्तावेज़ पढ़कर प्रोफ़ाइल सत्यापित करती है।",
@@ -280,6 +414,22 @@ const hi: Dict = {
     feature3Title: "अपनी जगह जानें",
     feature3Body:
       "देखें कि आपसे पहले कितने किसान हैं, और आपकी बारी आने पर SMS पाएं।",
+    feature4Title: "किसान मित्र — AI सहायक",
+    feature4Body:
+      "आवाज़ या लिखकर सवाल पूछें और अपनी भाषा में तुरंत जवाब पाएं — भाव, स्लॉट, दस्तावेज़ और भुगतान के बारे में।",
+    feature5Title: "सबके लिए आसान मोड",
+    feature5Body:
+      "बड़े बटन, आसान शब्द और बोलकर जवाब — पहली बार इंटरनेट चलाने वालों के लिए डिजिटल दूरी मिटाने के लिए।",
+    feature6Title: "तुरंत भुगतान रसीद",
+    feature6Body:
+      "भुगतान होते ही हर बिक्री की सत्यापित रसीद डाउनलोड या प्रिंट करें।",
+    langs: "अब 6 भाषाओं में — English, हिंदी, मराठी, বাংলা, தமிழ், తెలుగు",
+    highlight1Title: "लाइव कतार, भीड़ नहीं",
+    highlight1Body:
+      "देखते रहें कि आपसे आगे के किसान कब पूरे हो रहे हैं — सिर्फ़ अपनी बारी पर पहुंचें।",
+    highlight2Title: "भरोसेमंद भुगतान",
+    highlight2Body:
+      "हर बिक्री तौल से लेकर बैंक ट्रांसफर तक ट्रैक होती है, और MSP भाव ऐप में दिखते हैं।",
     howTitle: "यह कैसे काम करता है",
     how1: "खाता बनाएं",
     how1Body: "अपने ईमेल से साइन इन करें — बस 30 सेकंड।",
@@ -434,8 +584,7 @@ const hi: Dict = {
     helpline: "हेल्पलाइन (टोल फ्री)",
     email: "ईमेल",
     office: "कार्यालय",
-    officeAddr:
-      "बुंदेलखंड प्रौद्योगिकी संस्थान (BIET), झांसी, उप्र 284128",
+    officeAddr: "बुंदेलखंड प्रौद्योगिकी संस्थान (BIET), झांसी, उप्र 284128",
     hours: "सोम–शनि, सुबह 8 – शाम 6",
     faq: "अक्सर पूछे जाने वाले प्रश्न",
     rate: "अपने अनुभव को रेट करें",
@@ -460,14 +609,60 @@ const hi: Dict = {
   },
   settings: {
     title: "सेटिंग्स",
-    subtitle: "भाषा और रूप",
+    subtitle: "भाषा, मोड और रूप",
     language: "भाषा",
+    langHint: "पूरे ऐप के लिए भाषा चुनें",
+    easyMode: "आसान मोड",
+    easyModeHint:
+      "बड़ा टेक्स्ट और बटन, आसान शब्द — पहली बार उपयोग करने वालों के लिए",
     theme: "थीम",
     light: "लाइट",
     dark: "डार्क",
     about: "किसान सेतु के बारे में",
     aboutBody:
       "किसान सेतु किसानों को सरकारी खरीद केंद्रों से सीधे जोड़ता है: एक बार पंजीकरण करें, दस्तावेज़ सत्यापित कराएं, स्लॉट बुक करें, और अपनी कतार व भुगतान ट्रैक करें — सब अपने फोन से।",
+  },
+  easy: {
+    enable: "आसान मोड",
+    on: "आसान मोड चालू है",
+    onBody:
+      "बड़ा टेक्स्ट, आसान शब्द और एक-टैप काम। बंद करने के लिए स्टार आइकन फिर दबाएं।",
+    voiceHint: "सुझाव: लिखने की बजाय बोलने के लिए किसान मित्र में माइक दबाएं।",
+  },
+  receipt: {
+    title: "भुगतान रसीद",
+    view: "रसीद",
+    download: "डाउनलोड",
+    print: "प्रिंट",
+    header: "सरकारी खरीद रसीद",
+    ref: "रसीद नं.",
+    farmer: "किसान",
+    paidVia: "पंजीकृत बैंक खाते में DBT से भुगतान",
+    issued: "जारी",
+    token: "कतार टोकन",
+    footer: "यह कंप्यूटर-जनित रसीद है, हस्ताक्षर की आवश्यकता नहीं।",
+    support: "सवाल? कॉल करें 1800-180-1551",
+  },
+  chat: {
+    title: "किसान मित्र",
+    subtitle: "AI सहायक · आपकी भाषा में जवाब",
+    placeholder: "कुछ भी पूछें…",
+    send: "भेजें",
+    listening: "सुन रहे हैं… बोलिए",
+    thinking: "सोच रहा हूँ…",
+    micBlocked: "माइक उपलब्ध नहीं। कृपया सवाल लिखें।",
+    greeting:
+      "नमस्ते! मैं किसान मित्र हूँ 🙏 भाव, स्लॉट बुकिंग, दस्तावेज़ या भुगतान के बारे में पूछें।",
+    quick: "ये पूछें",
+    q1: "आज गेहूं का MSP क्या है?",
+    q2: "स्लॉट कैसे बुक करें?",
+    q3: "मेरा भुगतान कब मिलेगा?",
+    q4: "मुझे कौन से दस्तावेज़ चाहिए?",
+    aiNote: "AI जवाबों में गलती हो सकती है। ज़रूरी जानकारी केंद्र पर पक्की करें।",
+    open: "किसान मित्र से पूछें",
+    readAloud: "जवाब बोलकर सुनाएं",
+    offline: "ऑफ़लाइन जवाब (AI कुंजी सेट नहीं)",
+    error: "क्षमा करें, जवाब नहीं मिला। फिर कोशिश करें।",
   },
   common: {
     loading: "लोड हो रहा है…",
@@ -479,12 +674,1214 @@ const hi: Dict = {
   },
 };
 
+/* ------------------------------------------------------------------ */
+/* मराठी — Marathi                                                     */
+/* ------------------------------------------------------------------ */
+
+const mr: Overrides = {
+  brand: "किसान सेतू",
+  tagline: "न्याय्य खरेदीसाठी तुमचा थेट पूल",
+  nav: {
+    home: "मुख्यपृष्ठ",
+    register: "नोंदणी",
+    documents: "कागदपत्रे",
+    bookSlot: "स्लॉट बुक करा",
+    queue: "लाइव रांग",
+    prices: "भाव",
+    history: "इतिहास",
+    support: "मदत",
+    profile: "प्रोफाइल",
+    settings: "सेटिंग्ज",
+    about: "बद्दल",
+    logout: "बाहेर पडा",
+  },
+  landing: {
+    heroTitle: "पीक विका. रांग टाळा.",
+    heroSub:
+      "किसान सेतू प्रत्येक शेतकऱ्याला सत्यापित प्रोफाइल, बुक केलेला स्लॉट आणि लाइव रांगेतील स्थान देते — खरेदी केंद्रात दिवसभर थांबण्याची गरज नाही.",
+    ctaPrimary: "शेतकरी नोंदणी करा",
+    ctaSecondary: "साइन इन करा",
+    statFarmers: "नोंदलेले शेतकरी",
+    statCentres: "खरेदी केंद्रे",
+    statSlots: "आज बुक झालेले स्लॉट",
+    featuresTitle: "सर्व काही एकाच ठिकाणी",
+    featuresSub: "नोंदणीपासून देयकापर्यंत — तुमच्या आणि खरेदी केंद्रामधील एकच पूल.",
+    feature1Title: "मिनिटांत पडताळणी",
+    feature1Body:
+      "आधार, भूमि अभिलेख आणि बँक पासबुक अपलोड करा. आमची OCR पाइपलाइन कागदपत्रे वाचून प्रोफाइल सत्यापित करते.",
+    feature2Title: "तुमचा स्लॉट बुक करा",
+    feature2Body:
+      "केंद्र, दिवस आणि तुमच्या सोयीचा तासाचा स्लॉट निवडा. क्षमता लाइव दिसते — सकाळी ५ ची रांग नाही.",
+    feature3Title: "तुमचे स्थान जाणून घ्या",
+    feature3Body:
+      "तुमच्या आधी किती शेतकरी आहेत ते पहा, आणि तुमची वेळ जवळ आल्यास SMS मिळवा.",
+    feature4Title: "किसान मित्र — AI सहाय्यक",
+    feature4Body:
+      "आवाजाने किंवा लिहून विचारा आणि तुमच्या भाषेत तत्काळ उत्तर मिळवा — भाव, स्लॉट, कागदपत्रे आणि देयकांबद्दल.",
+    feature5Title: "सर्वांसाठी सोपा मोड",
+    feature5Body:
+      "मोठी बटणे, सोपे शब्द आणि बोलून दिलेली उत्तरे — प्रथमच इंटरनेट वापरणाऱ्यांसाठी.",
+    feature6Title: "तत्काळ देयक पावती",
+    feature6Body: "देयक झाल्यावर प्रत्येक विक्रीची सत्यापित पावती डाउनलोड किंवा प्रिंट करा.",
+    langs: "आता ६ भाषांमध्ये — English, हिंदी, मराठी, বাংলা, தமிழ், తెలుగు",
+    highlight1Title: "लाइव रांग, गर्दी नाही",
+    highlight1Body:
+      "तुमच्या आधीचे शेतकरी कधी पूर्ण होतात ते प्रत्यक्ष पहा — फक्त तुमच्या वेळेला या.",
+    highlight2Title: "विश्वासार्ह देयके",
+    highlight2Body:
+      "प्रत्येक विक्री वजनापासून बँक ट्रान्सफरपर्यंत मागमोजली जाते, आणि MSP भाव ॲपमध्ये दिसतात.",
+    howTitle: "हे कसे चालते",
+    how1: "खाते तयार करा",
+    how1Body: "तुमच्या ईमेलने साइन इन करा — फक्त ३० सेकंद.",
+    how2: "नोंदणी आणि पडताळणी",
+    how2Body: "तपशील भरा आणि कागदपत्रे अपलोड करा.",
+    how3: "स्लॉट बुक करा",
+    how3Body: "केंद्र, दिवस आणि वेळ निवडा. रांग टोकन लगेच मिळेल.",
+    how4: "विका आणि देयक मिळवा",
+    how4Body: "वेळेत केंद्रात पोहोचा. देयक स्थिती ॲपमध्ये दिसते.",
+    ctaTitle: "योग्य भावात विकायला तयार?",
+    ctaBody: "हजारो शेतकरी आधीच किसान सेतू वापरत आहेत.",
+    footerNote: "बुंदेलखंडातील शेतकऱ्यांसाठी · बीआयईटी झाशी",
+  },
+  auth: {
+    title: "किसान सेतूमध्ये स्वागत आहे",
+    subtitle: "पुढे जाण्यासाठी तुमच्या ईमेलने साइन इन करा",
+    emailLabel: "ईमेल पत्ता",
+    sendCode: "कोड पाठवा",
+    codeSent: "आम्ही ६ अंकी कोड पाठवला आहे",
+    verify: "सत्यापित करा आणि साइन इन करा",
+    tryAgain: "पुन्हा प्रयत्न करा",
+    changeEmail: "दुसरा ईमेल वापरा",
+    or: "किंवा",
+    guest: "पाहुणे म्हणून सुरू ठेवा",
+    secured: "freebuff.com द्वारे सुरक्षित",
+  },
+  home: {
+    greeting: "पुन्हा स्वागत आहे",
+    notRegistered: "स्लॉट बुक करण्यासाठी तुमची नोंदणी पूर्ण करा.",
+    registerNow: "आता नोंदणी करा",
+    verificationPending: "पडताळणी प्रलंबित",
+    verificationPendingBody:
+      "तुम्ही दिलेली कागदपत्रे तपासली जात आहेत. सत्यापन झाल्यावर स्लॉट बुकिंग सुरू होईल.",
+    verified: "सत्यापित शेतकरी",
+    verifiedBody: "सर्व तयार आहे — स्लॉट बुक करा आणि पीक विका.",
+    activeBooking: "सक्रिय बुकिंग",
+    noBooking: "सक्रिय बुकिंग नाही",
+    noBookingBody: "तुम्ही अजून स्लॉट बुक केलेले नाही.",
+    position: "तुमचे स्थान",
+    ahead: "शेतकरी तुमच्या पुढे",
+    of: "पैकी",
+    inQueue: "रांगेत",
+    quickActions: "जलद कृती",
+    bookSlot: "स्लॉट बुक करा",
+    uploadDoc: "कागदपत्रे अपलोड करा",
+    viewPrices: "आजचे भाव",
+    statDocs: "कागदपत्रे",
+    statTx: "व्यवहार",
+    recentTx: "अलीकडील देयके",
+    noTx: "अजून व्यवहार नाही.",
+  },
+  register: {
+    title: "शेतकरी नोंदणी",
+    subtitle: "तुमच्या किसान सेतू प्रोफाइलसाठी माहिती",
+    name: "पूर्ण नाव",
+    phone: "मोबाइल क्रमांक",
+    village: "गाव",
+    district: "जिल्हा",
+    state: "राज्य",
+    land: "जमीन (एकरमध्ये)",
+    save: "सेव्ह करा आणि पुढे जा",
+    saved: "नोंदणी सेव्ह झाली",
+    updateSaved: "प्रोफाइल अपडेट झाली",
+    editProfile: "प्रोफाइल संपादित करा",
+  },
+  docs: {
+    title: "कागदपत्र पडताळणी",
+    subtitle: "कागदपत्रे अपलोड करा. OCR ती स्वयंचलित वाचून प्रोफाइल सत्यापित करते.",
+    aadhaar: "आधार कार्ड",
+    pan: "पॅन कार्ड",
+    landRecord: "भूमि अभिलेख (७/१२)",
+    bankPassbook: "बँक पासबुक",
+    upload: "अपलोड",
+    uploaded: "अपलोड केलेली कागदपत्रे",
+    status: "स्थिती",
+    none: "अजून कागदपत्रे अपलोड केलेली नाहीत.",
+    verified: "सत्यापित",
+    processing: "प्रक्रिया सुरू",
+    rejected: "नाकारले",
+    delete: "काढा",
+    ocrNote:
+      "आमची OCR + NLP पाइपलाइन फाईलमधून तुमचा आयडी नंबर आणि नाव काढून ते सत्यापित करते.",
+    idNumber: "काढलेला आयडी",
+    holder: "धारक",
+  },
+  booking: {
+    title: "खरेदी स्लॉट बुक करा",
+    subtitle: "केंद्र, दिवस आणि वेळ निवडा",
+    center: "खरेदी केंद्र",
+    day: "दिवस",
+    today: "आज",
+    tomorrow: "उद्या",
+    slot: "वेळेचा स्लॉट",
+    capacity: "क्षमता",
+    book: "हा स्लॉट बुक करा",
+    booked: "बुक",
+    full: "भरलेले",
+    confirmTitle: "बुकिंगची खात्री करा",
+    confirmBody: "तुम्हाला लगेच रांग टोकन आणि स्थान मिळेल.",
+    cancel: "रद्द करा",
+    confirm: "खात्री करा",
+    bookedToast: "स्लॉट बुक झाले! टोकन",
+    alreadyBooked: "तुमची आधीच एक सक्रिय बुकिंग आहे.",
+    needVerification: "स्लॉट बुक करण्यासाठी कागदपत्रे सत्यापित करा.",
+  },
+  queue: {
+    title: "लाइव रांग",
+    subtitle: "खरेदी केंद्रात प्रत्यक्ष वेळेची स्थिती",
+    token: "टोकन",
+    center: "केंद्र",
+    slotLabel: "स्लॉट",
+    yourPosition: "तुमचे स्थान",
+    total: "रांगेत एकूण",
+    peopleAhead: "तुमच्या पुढे शेतकरी",
+    active: "तुमची वेळ जवळ आली आहे — तयार रहा!",
+    waiting: "तुमच्या वळणाची वाट पहा. आम्ही SMS ने कळवू.",
+    noneActive: "सक्रिय बुकिंग नाही",
+    noneActiveBody: "लाइव रांगेतील स्थान पाहण्यासाठी स्लॉट बुक करा.",
+    bookNow: "आता स्लॉट बुक करा",
+    cancelBooking: "बुकिंग रद्द करा",
+    cancelledToast: "बुकिंग रद्द झाली",
+    history: "मागील बुकिंग",
+    historyEmpty: "मागील बुकिंग नाही.",
+  },
+  prices: {
+    title: "आजचे समर्थन भाव",
+    subtitle: "प्रति क्विंटल किमान समर्थन भाव (MSP)",
+    crop: "पीक",
+    price: "भाव / क्विंटल",
+    updated: "अपडेट",
+    searchPlaceholder: "पिके शोधा…",
+  },
+  history: {
+    title: "व्यवहार इतिहास",
+    subtitle: "विकलेल्या पिकांचे देयके",
+    ref: "संदर्भ",
+    crop: "पीक",
+    qty: "प्रमाण (क्विंटल)",
+    rate: "दर (₹/क्विंटल)",
+    amount: "रक्कम",
+    status: "स्थिती",
+    paid: "देयक झाले",
+    pending: "प्रलंबित",
+    empty: "अजून व्यवहार नाही.",
+    total: "एकूण मिळाले",
+    totalPending: "देयक प्रतीक्षित",
+  },
+  support: {
+    title: "संपर्क आणि मदत",
+    subtitle: "आम्ही तुमच्या मदतीसाठी आहोत",
+    helpline: "हेल्पलाइन (टोल फ्री)",
+    email: "ईमेल",
+    office: "कार्यालय",
+    officeAddr: "बुंदेलखंड अभियांत्रिकी संस्था (BIET), झाशी, उ.प्र. 284128",
+    hours: "सोम–शनि, सकाळी ८ – संध्याकाळी ६",
+    faq: "वारंवार विचारले जाणारे प्रश्न",
+    rate: "तुमचा अनुभव मूल्यांकित करा",
+    rateThanks: "तुमच्या अभिप्रायाबद्दल धन्यवाद!",
+    faq1: "मला कोणती कागदपत्रे लागतात?",
+    faq1Body:
+      "आधार, पॅन, भूमि अभिलेख आणि बँक पासबुक. ते कागदपत्रे टॅबमध्ये अपलोड करा.",
+    faq2: "देयक कधी मिळेल?",
+    faq2Body:
+      "खरेदीनंतर ३ कामाच्या दिवसांत देयक जमा होते. व्यवहार इतिहासमध्ये पहा.",
+    faq3: "स्लॉट बदलू शकतो का?",
+    faq3Body:
+      "हो — सक्रिय बुकिंग रद्द करून तुमच्या वळणीपूर्वी दुसरा स्लॉट बुक करा.",
+  },
+  profile: {
+    title: "प्रोफाइल",
+    subtitle: "तुमची किसान सेतू ओळख",
+    personal: "वैयक्तिक तपशील",
+    verification: "पडताळणी",
+    member: "सदस्य झाल्यापासून",
+    notRegistered: "अजून नोंदलेले नाही",
+  },
+  settings: {
+    title: "सेटिंग्ज",
+    subtitle: "भाषा, मोड आणि स्वरूप",
+    language: "भाषा",
+    langHint: "संपूर्ण ॲपसाठी भाषा निवडा",
+    easyMode: "सोपा मोड",
+    easyModeHint: "मोठा मजकूर आणि बटणे, सोपे शब्द — प्रथमच वापरणाऱ्यांसाठी",
+    theme: "थीम",
+    light: "लाइट",
+    dark: "डार्क",
+    about: "किसान सेतूबद्दल",
+    aboutBody:
+      "किसान सेतू शेतकऱ्यांना सरकारी खरेदी केंद्रांशी थेट जोडते: एकदा नोंदणी करा, कागदपत्रे सत्यापित करा, स्लॉट बुक करा, आणि रांग व देयक मागमोजा — सर्व तुमच्या फोनवरून.",
+  },
+  easy: {
+    enable: "सोपा मोड",
+    on: "सोपा मोड सुरू आहे",
+    onBody: "मोठा मजकूर, सोपे शब्द आणि एक-टॅप कृती. बंद करण्यासाठी तारा चिन्ह पुन्हा दाबा.",
+    voiceHint: "टिप: टाईप करण्याऐवजी बोलण्यासाठी किसान मित्रात मायक दाबा.",
+  },
+  receipt: {
+    title: "देयक पावती",
+    view: "पावती",
+    download: "डाउनलोड",
+    print: "प्रिंट",
+    header: "सरकारी खरेदी पावती",
+    ref: "पावती क्र.",
+    farmer: "शेतकरी",
+    paidVia: "नोंदलेल्या बँक खात्यात DBT द्वारे देयक",
+    issued: "जारी",
+    token: "रांग टोकन",
+    footer: "ही संगणक-निर्मित पावती आहे, स्वाक्षरीची गरज नाही.",
+    support: "प्रश्न? कॉल करा 1800-180-1551",
+  },
+  chat: {
+    title: "किसान मित्र",
+    subtitle: "AI सहाय्यक · तुमच्या भाषेत उत्तर",
+    placeholder: "काहीही विचारा…",
+    send: "पाठवा",
+    listening: "ऐकत आहे… बोला",
+    thinking: "विचार करत आहे…",
+    micBlocked: "मायक्रोफोन उपलब्ध नाही. कृपया प्रश्न टाईप करा.",
+    greeting:
+      "नमस्कार! मी किसान मित्र 🙏 भाव, स्लॉट बुकिंग, कागदपत्रे किंवा देयकांबद्दल विचारा.",
+    quick: "हे विचारा",
+    q1: "आज गहू यांचा MSP किती आहे?",
+    q2: "स्लॉट कसे बुक करावे?",
+    q3: "माझे देयक कधी मिळेल?",
+    q4: "मला कोणती कागदपत्रे लागतात?",
+    aiNote: "AI उत्तरांमध्ये चूक होऊ शकते. महत्त्वाची माहिती केंद्रात खात्री करा.",
+    open: "किसान मित्राला विचारा",
+    readAloud: "उत्तरे बोलून ऐकवा",
+    offline: "ऑफलाइन उत्तर (AI की सेट नाही)",
+    error: "क्षमस्व, उत्तर मिळाले नाही. पुन्हा प्रयत्न करा.",
+  },
+  common: {
+    loading: "लोड होत आहे…",
+    save: "सेव्ह",
+    cancel: "रद्द",
+    close: "बंद",
+    viewAll: "सर्व पहा",
+    dashboard: "डॅशबोर्ड",
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/* বাংলা — Bengali                                                     */
+/* ------------------------------------------------------------------ */
+
+const bn: Overrides = {
+  brand: "কিসান সেতু",
+  tagline: "ন্যায্য ক্রয়ের জন্য আপনার সরাসরি সেতু",
+  nav: {
+    home: "হোম",
+    register: "নিবন্ধন",
+    documents: "নথিপত্র",
+    bookSlot: "স্লট বুক করুন",
+    queue: "লাইভ লাইন",
+    prices: "দাম",
+    history: "ইতিহাস",
+    support: "সহায়তা",
+    profile: "প্রোফাইল",
+    settings: "সেটিংস",
+    about: "সম্পর্কে",
+    logout: "লগ আউট",
+  },
+  landing: {
+    heroTitle: "আপনার ফসল বিক্রি করুন। লাইন এড়িয়ে যান।",
+    heroSub:
+      "কিসান সেতু প্রতিটি কৃষককে যাচাই করা প্রোফাইল, বুক করা স্লট এবং লাইভ লাইনের অবস্থান দেয় — ক্রয় কেন্দ্রে সারাদিন অপেক্ষার প্রয়োজন নেই।",
+    ctaPrimary: "কৃষক হিসেবে নিবন্ধন করুন",
+    ctaSecondary: "সাইন ইন করুন",
+    statFarmers: "নিবন্ধিত কৃষক",
+    statCentres: "ক্রয় কেন্দ্র",
+    statSlots: "আজ বুক হওয়া স্লট",
+    featuresTitle: "সবকিছু এক জায়গায়",
+    featuresSub: "নিবন্ধন থেকে পেমেন্ট — আপনার ও ক্রয় কেন্দ্রের মাঝে একটিই সেতু।",
+    feature1Title: "মিনিটেই যাচাই",
+    feature1Body:
+      "আধার, জমির দলিল ও ব্যাঙ্ক পাসবুক আপলোড করুন। আমাদের OCR পাইপলাইন নথি পড়ে স্বয়ংক্রিয়ভাবে প্রোফাইল যাচাই করে।",
+    feature2Title: "আপনার স্লট বুক করুন",
+    feature2Body:
+      "কেন্দ্র, দিন ও আপনার সুবিধামতো ঘণ্টার স্লট বেছে নিন। ধারণক্ষমতা লাইভ দেখা যায় — ভোর ৫টার লাইন নেই।",
+    feature3Title: "আপনার অবস্থান জানুন",
+    feature3Body:
+      "আপনার আগে কতজন কৃষক আছেন তা দেখুন, আর আপনার পালা কাছে এলে SMS পান।",
+    feature4Title: "কিসান মিত্র — AI সহকারী",
+    feature4Body:
+      "কণ্ঠে বা লিখে প্রশ্ন করুন, আপনার ভাষায় সঙ্গে সঙ্গে উত্তর পান — দাম, স্লট, নথিপত্র ও পেমেন্ট সম্পর্কে।",
+    feature5Title: "সবার জন্য সহজ মোড",
+    feature5Body:
+      "বড় বোতাম, সহজ শব্দ আর পড়ে শোনানো উত্তর — প্রথমবার ইন্টারনেট ব্যবহারকারীদের জন্য।",
+    feature6Title: "তাৎক্ষণিক পেমেন্ট রশিদ",
+    feature6Body: "পেমেন্ট হওয়ামাত্র প্রতিটি বিক্রির যাচাই করা রশিদ ডাউনলোড বা প্রিন্ট করুন।",
+    langs: "এখন ৬টি ভাষায় — English, हिंदी, मराठी, বাংলা, தமிழ், తెలుగు",
+    highlight1Title: "লাইভ লাইন, ভিড় নেই",
+    highlight1Body:
+      "আপনার আগের কৃষকরা কখন শেষ হচ্ছেন তা দেখুন — শুধু আপনার পালায় পৌঁছান।",
+    highlight2Title: "বিশ্বাসযোগ্য পেমেন্ট",
+    highlight2Body:
+      "প্রতিটি বিক্রি ওজন থেকে ব্যাঙ্ক ট্রান্সফার পর্যন্ত ট্র্যাক হয়, MSP দাম অ্যাপেই দেখা যায়।",
+    howTitle: "এটি যেভাবে কাজ করে",
+    how1: "অ্যাকাউন্ট তৈরি করুন",
+    how1Body: "আপনার ইমেল দিয়ে সাইন ইন করুন — মাত্র ৩০ সেকেন্ড।",
+    how2: "নিবন্ধন ও যাচাই",
+    how2Body: "তথ্য দিন এবং নথিপত্র আপলোড করুন।",
+    how3: "স্লট বুক করুন",
+    how3Body: "কেন্দ্র, দিন ও সময় বেছে নিন। লাইন টোকেন সঙ্গে সঙ্গে মিলবে।",
+    how4: "বিক্রি করুন ও পেমেন্ট নিন",
+    how4Body: "সময়মতো কেন্দ্রে পৌঁছান। পেমেন্টের অবস্থা অ্যাপে দেখা যায়।",
+    ctaTitle: "সঠিক দামে বিক্রি করতে প্রস্তুত?",
+    ctaBody: "হাজারো কৃষক ইতিমধ্যে কিসান সেতু ব্যবহার করছেন।",
+    footerNote: "বুন্দেলখণ্ডের কৃষকদের জন্য · বিআইইটি ঝাঁসি",
+  },
+  auth: {
+    title: "কিসান সেতুতে স্বাগতম",
+    subtitle: "এগিয়ে যেতে আপনার ইমেল দিয়ে সাইন ইন করুন",
+    emailLabel: "ইমেল ঠিকানা",
+    sendCode: "কোড পাঠান",
+    codeSent: "আমরা ৬ সংখ্যার কোড পাঠিয়েছি",
+    verify: "যাচাই করে সাইন ইন করুন",
+    tryAgain: "আবার চেষ্টা করুন",
+    changeEmail: "অন্য ইমেল ব্যবহার করুন",
+    or: "অথবা",
+    guest: "অতিথি হিসেবে চালিয়ে যান",
+    secured: "freebuff.com দ্বারা সুরক্ষিত",
+  },
+  home: {
+    greeting: "আবার স্বাগতম",
+    notRegistered: "স্লট বুক করতে আপনার নিবন্ধন সম্পূর্ণ করুন।",
+    registerNow: "এখনই নিবন্ধন করুন",
+    verificationPending: "যাচাই বাকি",
+    verificationPendingBody:
+      "আপনার নথিপত্র পরীক্ষা চলছে। যাচাই হলেই স্লট বুকিং খুলে যাবে।",
+    verified: "যাচাইকৃত কৃষক",
+    verifiedBody: "সব প্রস্তুত — স্লট বুক করুন ও ফসল বিক্রি করুন।",
+    activeBooking: "সক্রিয় বুকিং",
+    noBooking: "কোনো সক্রিয় বুকিং নেই",
+    noBookingBody: "আপনি এখনও কোনো স্লট বুক করেননি।",
+    position: "আপনার অবস্থান",
+    ahead: "জন কৃষক আপনার আগে",
+    of: "এর মধ্যে",
+    inQueue: "লাইনে",
+    quickActions: "দ্রুত কাজ",
+    bookSlot: "স্লট বুক করুন",
+    uploadDoc: "নথি আপলোড করুন",
+    viewPrices: "আজকের দাম",
+    statDocs: "নথিপত্র",
+    statTx: "লেনদেন",
+    recentTx: "সাম্প্রতিক পেমেন্ট",
+    noTx: "এখনও কোনো লেনদেন নেই।",
+  },
+  register: {
+    title: "কৃষক নিবন্ধন",
+    subtitle: "আপনার কিসান সেতু প্রোফাইলের তথ্য",
+    name: "পুরো নাম",
+    phone: "মোবাইল নম্বর",
+    village: "গ্রাম",
+    district: "জেলা",
+    state: "রাজ্য",
+    land: "জমি (একরে)",
+    save: "সংরক্ষণ করে এগোন",
+    saved: "নিবন্ধন সংরক্ষিত হয়েছে",
+    updateSaved: "প্রোফাইল হালনাগাদ হয়েছে",
+    editProfile: "প্রোফাইল সম্পাদনা",
+  },
+  docs: {
+    title: "নথি যাচাই",
+    subtitle: "নথিপত্র আপলোড করুন। OCR স্বয়ংক্রিয়ভাবে পড়ে প্রোফাইল যাচাই করে।",
+    aadhaar: "আধার কার্ড",
+    pan: "প্যান কার্ড",
+    landRecord: "জমির রেকর্ড (খতিয়ান)",
+    bankPassbook: "ব্যাঙ্ক পাসবুক",
+    upload: "আপলোড",
+    uploaded: "আপলোড করা নথিপত্র",
+    status: "অবস্থা",
+    none: "এখনও কোনো নথি আপলোড হয়নি।",
+    verified: "যাচাইকৃত",
+    processing: "প্রক্রিয়াধীন",
+    rejected: "বাতিল",
+    delete: "সরান",
+    ocrNote:
+      "আমাদের OCR + NLP পাইপলাইন ফাইল থেকে আইডি নম্বর ও নাম বের করে যাচাই করে।",
+    idNumber: "বের করা আইডি",
+    holder: "ধারক",
+  },
+  booking: {
+    title: "ক্রয় স্লট বুক করুন",
+    subtitle: "কেন্দ্র, দিন ও সময় বেছে নিন",
+    center: "ক্রয় কেন্দ্র",
+    day: "দিন",
+    today: "আজ",
+    tomorrow: "কাল",
+    slot: "সময়ের স্লট",
+    capacity: "ধারণক্ষমতা",
+    book: "এই স্লট বুক করুন",
+    booked: "বুক",
+    full: "পূর্ণ",
+    confirmTitle: "বুকিং নিশ্চিত করুন",
+    confirmBody: "সঙ্গে সঙ্গে লাইন টোকেন ও অবস্থান পাবেন।",
+    cancel: "বাতিল",
+    confirm: "নিশ্চিত করুন",
+    bookedToast: "স্লট বুক হয়েছে! টোকেন",
+    alreadyBooked: "আপনার ইতিমধ্যে একটি সক্রিয় বুকিং আছে।",
+    needVerification: "স্লট বুক করতে নথি যাচাই করান।",
+  },
+  queue: {
+    title: "লাইভ লাইন",
+    subtitle: "ক্রয় কেন্দ্রে রিয়েল-টাইম অবস্থা",
+    token: "টোকেন",
+    center: "কেন্দ্র",
+    slotLabel: "স্লট",
+    yourPosition: "আপনার অবস্থান",
+    total: "লাইনে মোট",
+    peopleAhead: "আপনার আগে কৃষক",
+    active: "আপনার পালা আসছে — প্রস্তুত হোন!",
+    waiting: "আপনার পালার অপেক্ষা করুন। আমরা SMS-এ জানাব।",
+    noneActive: "কোনো সক্রিয় বুকিং নেই",
+    noneActiveBody: "লাইভ অবস্থান দেখতে স্লট বুক করুন।",
+    bookNow: "এখনই স্লট বুক করুন",
+    cancelBooking: "বুকিং বাতিল করুন",
+    cancelledToast: "বুকিং বাতিল হয়েছে",
+    history: "আগের বুকিং",
+    historyEmpty: "আগের কোনো বুকিং নেই।",
+  },
+  prices: {
+    title: "আজকের সমর্থন মূল্য",
+    subtitle: "প্রতি কুইন্টালে ন্যূনতম সমর্থন মূল্য (MSP)",
+    crop: "ফসল",
+    price: "দাম / কুইন্টাল",
+    updated: "হালনাগাদ",
+    searchPlaceholder: "ফসল খুঁজুন…",
+  },
+  history: {
+    title: "লেনদেনের ইতিহাস",
+    subtitle: "বিক্রি করা ফসলের পেমেন্ট",
+    ref: "রেফারেন্স",
+    crop: "ফসল",
+    qty: "পরিমাণ (কুইন্টাল)",
+    rate: "দর (₹/কুইন্টাল)",
+    amount: "পরিমাণ টাকা",
+    status: "অবস্থা",
+    paid: "পেমেন্ট হয়েছে",
+    pending: "বাকি",
+    empty: "এখনও কোনো লেনদেন নেই।",
+    total: "মোট প্রাপ্ত",
+    totalPending: "পেমেন্ট প্রতীক্ষিত",
+  },
+  support: {
+    title: "যোগাযোগ ও সহায়তা",
+    subtitle: "আমরা আপনার পাশে আছি",
+    helpline: "হেল্পলাইন (টোল ফ্রি)",
+    email: "ইমেল",
+    office: "অফিস",
+    officeAddr: "বুন্দেলখণ্ড ইঞ্জিনিয়ারিং ইনস্টিটিউট (BIET), ঝাঁসি, উ.প্র. 284128",
+    hours: "সোম–শনি, সকাল ৮ – সন্ধ্যা ৬",
+    faq: "প্রায়ই জিজ্ঞাসিত প্রশ্ন",
+    rate: "আপনার অভিজ্ঞতা রেট করুন",
+    rateThanks: "আপনার মতামতের জন্য ধন্যবাদ!",
+    faq1: "আমার কোন নথি দরকার?",
+    faq1Body: "আধার, প্যান, জমির রেকর্ড ও ব্যাঙ্ক পাসবুক। নথি ট্যাবে আপলোড করুন।",
+    faq2: "পেমেন্ট কখন পাব?",
+    faq2Body: "ক্রয়ের ৩ কর্মদিবসের মধ্যে পেমেন্ট জমা হয়। লেনদেনের ইতিহাসে দেখুন।",
+    faq3: "স্লট বদলাতে পারি?",
+    faq3Body:
+      "হ্যাঁ — সক্রিয় বুকিং বাতিল করে আপনার পালার আগেই অন্য স্লট বুক করুন।",
+  },
+  profile: {
+    title: "প্রোফাইল",
+    subtitle: "আপনার কিসান সেতু পরিচয়",
+    personal: "ব্যক্তিগত তথ্য",
+    verification: "যাচাই",
+    member: "সদস্য হয়েছেন",
+    notRegistered: "এখনও নিবন্ধিত নন",
+  },
+  settings: {
+    title: "সেটিংস",
+    subtitle: "ভাষা, মোড ও চেহারা",
+    language: "ভাষা",
+    langHint: "পুরো অ্যাপের জন্য ভাষা বেছে নিন",
+    easyMode: "সহজ মোড",
+    easyModeHint: "বড় লেখা ও বোতাম, সহজ শব্দ — নতুন ব্যবহারকারীদের জন্য",
+    theme: "থিম",
+    light: "লাইট",
+    dark: "ডার্ক",
+    about: "কিসান সেতু সম্পর্কে",
+    aboutBody:
+      "কিসান সেতু কৃষকদের সরকারি ক্রয় কেন্দ্রের সঙ্গে সরাসরি যুক্ত করে: একবার নিবন্ধন করুন, নথি যাচাই করান, স্লট বুক করুন, আর লাইন ও পেমেন্ট ট্র্যাক করুন — সব আপনার ফোন থেকেই।",
+  },
+  easy: {
+    enable: "সহজ মোড",
+    on: "সহজ মোড চালু আছে",
+    onBody: "বড় লেখা, সহজ শব্দ ও এক-ট্যাপ কাজ। বন্ধ করতে তারা চিহ্ন আবার চাপুন।",
+    voiceHint: "টিপ: টাইপ না করে বলতে কিসান মিত্রে মাইক চাপুন।",
+  },
+  receipt: {
+    title: "পেমেন্ট রশিদ",
+    view: "রশিদ",
+    download: "ডাউনলোড",
+    print: "প্রিন্ট",
+    header: "সরকারি ক্রয় রশিদ",
+    ref: "রশিদ নং",
+    farmer: "কৃষক",
+    paidVia: "নিবন্ধিত ব্যাঙ্ক হিসেবে DBT-তে পেমেন্ট",
+    issued: "ইস্যু",
+    token: "লাইন টোকেন",
+    footer: "এটি কম্পিউটার-জনিত রশিদ, স্বাক্ষরের প্রয়োজন নেই।",
+    support: "প্রশ্ন? কল করুন 1800-180-1551",
+  },
+  chat: {
+    title: "কিসান মিত্র",
+    subtitle: "AI সহকারী · আপনার ভাষায় উত্তর",
+    placeholder: "যা খুশি জিজ্ঞাসা করুন…",
+    send: "পাঠান",
+    listening: "শুনছি… বলুন",
+    thinking: "ভাবছি…",
+    micBlocked: "মাইক্রোফোন নেই। অনুগ্রহ করে প্রশ্ন টাইপ করুন।",
+    greeting:
+      "নমস্কার! আমি কিসান মিত্র 🙏 দাম, স্লট বুকিং, নথিপত্র বা পেমেন্ট নিয়ে জিজ্ঞাসা করুন।",
+    quick: "জিজ্ঞাসা করুন",
+    q1: "আজ গমের MSP কত?",
+    q2: "স্লট কীভাবে বুক করব?",
+    q3: "আমার পেমেন্ট কখন পাব?",
+    q4: "আমার কোন নথিপত্র দরকার?",
+    aiNote: "AI উত্তরে ভুল হতে পারে। গুরুত্বপূর্ণ তথ্য কেন্দ্রে নিশ্চিত করুন।",
+    open: "কিসান মিত্রকে জিজ্ঞাসা করুন",
+    readAloud: "উত্তর পড়ে শোনান",
+    offline: "অফলাইন উত্তর (AI কী সেট নেই)",
+    error: "দুঃখিত, উত্তর পাইনি। আবার চেষ্টা করুন।",
+  },
+  common: {
+    loading: "লোড হচ্ছে…",
+    save: "সংরক্ষণ",
+    cancel: "বাতিল",
+    close: "বন্ধ",
+    viewAll: "সব দেখুন",
+    dashboard: "ড্যাশবোর্ড",
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/* தமிழ் — Tamil                                                       */
+/* ------------------------------------------------------------------ */
+
+const ta: Overrides = {
+  brand: "கிசான் சேது",
+  tagline: "நியாயமான கொள்முதலுக்கான உங்கள் நேரடி பாலம்",
+  nav: {
+    home: "முகப்பு",
+    register: "பதிவு",
+    documents: "ஆவணங்கள்",
+    bookSlot: "ஸ்லாட் பதிவு",
+    queue: "நேரடி வரிசை",
+    prices: "விலை",
+    history: "வரலாறு",
+    support: "உதவி",
+    profile: "சுயவிவரம்",
+    settings: "அமைப்புகள்",
+    about: "பற்றி",
+    logout: "வெளியேறு",
+  },
+  landing: {
+    heroTitle: "உங்கள் அறுவடையை விற்றுவிடுங்கள். வரிசையை தாண்டுங்கள்.",
+    heroSub:
+      "கிசான் சேது ஒவ்வொரு விவசாயிக்கும் சரிபார்க்கப்பட்ட சுயவிவரம், பதிவு செய்யப்பட்ட ஸ்லாட் மற்றும் நேரடி வரிசை இடத்தை தருகிறது — கொள்முதல் மையத்தில் நாள் முழுவதும் காத்திருக்க வேண்டாம்.",
+    ctaPrimary: "விவசாயியாக பதிவு செய்யுங்கள்",
+    ctaSecondary: "உள்நுழையுங்கள்",
+    statFarmers: "பதிவு செய்யப்பட்ட விவசாயிகள்",
+    statCentres: "கொள்முதல் மையங்கள்",
+    statSlots: "இன்று பதிவான ஸ்லாட்கள்",
+    featuresTitle: "அனைத்தும் ஒரே இடத்தில்",
+    featuresSub: "பதிவு முதல் பணம் வரை — நீங்களும் கொள்முதல் மையமும் இடையே ஒரே பாலம்.",
+    feature1Title: "நிமிடங்களில் சரிபார்ப்பு",
+    feature1Body:
+      "ஆதார், நில ஆவணம், வங்கி பாஸ்புக் பதிவேற்றுங்கள். எங்கள் OCR ஆவணங்களைப் படித்து தானாக சரிபார்க்கிறது.",
+    feature2Title: "உங்கள் ஸ்லாட்டை பதிவு செய்யுங்கள்",
+    feature2Body:
+      "மையம், நாள் மற்றும் உங்களுக்கு ஏற்ற மணி நேர ஸ்லாட்டைத் தேர்வு செய்யுங்கள். கொள்ளளவு நேரலையில் — அதிகாலை 5 மணி வரிசை இல்லை.",
+    feature3Title: "உங்கள் இடம் தெரியும்",
+    feature3Body:
+      "உங்களுக்கு முன் எத்தனை விவசாயிகள் என்று பாருங்கள், உங்கள் முறை நெருங்கும்போது SMS பெறுங்கள்.",
+    feature4Title: "கிசான் மித்ரா — AI உதவியாளர்",
+    feature4Body:
+      "குரலாகவோ எழுதியோ கேளுங்கள், உங்கள் மொழியில் உடனடி பதில் பெறுங்கள் — விலை, ஸ்லாட், ஆவணங்கள், பணம் பற்றி.",
+    feature5Title: "அனைவருக்கும் எளிய பயன்முறை",
+    feature5Body:
+      "பெரிய பொத்தான்கள், எளிய சொற்கள், கேட்கும் பதில்கள் — முதன்முறை இணைய பயனர்களுக்கு.",
+    feature6Title: "உடனடி பணம் ரசீது",
+    feature6Body: "பணம் வந்தவுடன் ஒவ்வொரு விற்பனைக்கும் ரசீதை பதிவிறக்கம் அல்லது அச்சிடுங்கள்.",
+    langs: "இப்போது 6 மொழிகளில் — English, हिंदी, मराठी, বাংলা, தமிழ், తెలుగు",
+    highlight1Title: "நேரடி வரிசை, கூட்டம் இல்லை",
+    highlight1Body:
+      "உங்களுக்கு முன்னிருப்போர் முடிவதை நேரலையில் பாருங்கள் — உங்கள் முறைக்கு மட்டும் வருகை தாருங்கள்.",
+    highlight2Title: "நம்பகமான பணப்பரிமாற்றம்",
+    highlight2Body:
+      "ஒவ்வொரு விற்பனையும் எடையிலிருந்து வங்கி பரிமாற்றம் வரை கண்காணிக்கப்படுகிறது; MSP விலைகள் செயலியில்.",
+    howTitle: "இது எப்படி வேலை செய்கிறது",
+    how1: "கணக்கு உருவாக்குங்கள்",
+    how1Body: "மின்னஞ்சல் மூலம் உள்நுழையுங்கள் — 30 வினாடிகள் மட்டும்.",
+    how2: "பதிவு & சரிபார்ப்பு",
+    how2Body: "விவரங்களை நிரப்பி ஆவணங்களை பதிவேற்றுங்கள்.",
+    how3: "ஸ்லாட் பதிவு",
+    how3Body: "மையம், நாள், நேரம் தேர்வு செய்யுங்கள். வரிசை டோக்கன் உடனே கிடைக்கும்.",
+    how4: "விற்று பணம் பெறுங்கள்",
+    how4Body: "நேரத்தில் மையத்துக்கு வாருங்கள். பணம் நிலை செயலியில் தெரியும்.",
+    ctaTitle: "சரியான விலையில் விற்க தயாரா?",
+    ctaBody: "ஆயிரக்கணக்கான விவசாயிகள் ஏற்கனவே கிசான் சேதுவை பயன்படுத்துகிறார்கள்.",
+    footerNote: "புண்டேல்கண்ட் விவசாயிகளுக்காக · BIET ஜான்சி",
+  },
+  auth: {
+    title: "கிசான் சேதுவுக்கு வரவேற்கிறோம்",
+    subtitle: "தொடர உங்கள் மின்னஞ்சல் மூலம் உள்நுழையுங்கள்",
+    emailLabel: "மின்னஞ்சல் முகவரி",
+    sendCode: "குறியீடு அனுப்பு",
+    codeSent: "6 இலக்க குறியீடு அனுப்பப்பட்டது",
+    verify: "சரிபார்த்து உள்நுழையுங்கள்",
+    tryAgain: "மீண்டும் முயற்சிக்கவும்",
+    changeEmail: "வேறு மின்னஞ்சல் பயன்படுத்து",
+    or: "அல்லது",
+    guest: "விருந்தினராக தொடரவும்",
+    secured: "freebuff.com மூலம் பாதுகாப்பு",
+  },
+  home: {
+    greeting: "மீண்டும் வரவேற்கிறோம்",
+    notRegistered: "ஸ்லாட் பதிவுக்கு உங்கள் பதிவை முடிக்கவும்.",
+    registerNow: "இப்போதே பதிவு செய்யுங்கள்",
+    verificationPending: "சரிபார்ப்பு நிலுவையில்",
+    verificationPendingBody:
+      "உங்கள் ஆவணங்கள் ஆய்வில் உள்ளன. சரிபார்க்கப்பட்டதும் ஸ்லாட் பதிவு திறக்கும்.",
+    verified: "சரிபார்க்கப்பட்ட விவசாயி",
+    verifiedBody: "எல்லாம் தயார் — ஸ்லாட் பதிவு செய்து அறுவடையை விற்றுவிடுங்கள்.",
+    activeBooking: "செயலில் உள்ள பதிவு",
+    noBooking: "செயலில் பதிவு இல்லை",
+    noBookingBody: "இன்னும் நீங்கள் ஸ்லாட் பதிவு செய்யவில்லை.",
+    position: "உங்கள் இடம்",
+    ahead: "விவசாயிகள் உங்களுக்கு முன்",
+    of: "இல்",
+    inQueue: "வரிசையில்",
+    quickActions: "விரைவு செயல்கள்",
+    bookSlot: "ஸ்லாட் பதிவு",
+    uploadDoc: "ஆவணம் பதிவேற்று",
+    viewPrices: "இன்றைய விலை",
+    statDocs: "ஆவணங்கள்",
+    statTx: "பரிவர்த்தனைகள்",
+    recentTx: "சமீபத்திய பணம்",
+    noTx: "இன்னும் பரிவர்த்தனை இல்லை.",
+  },
+  register: {
+    title: "விவசாயி பதிவு",
+    subtitle: "உங்கள் கிசான் சேது சுயவிவர விவரங்கள்",
+    name: "முழு பெயர்",
+    phone: "கைபேசி எண்",
+    village: "கிராமம்",
+    district: "மாவட்டம்",
+    state: "மாநிலம்",
+    land: "நிலம் (ஏக்கர்)",
+    save: "சேமித்து தொடரவும்",
+    saved: "பதிவு சேமிக்கப்பட்டது",
+    updateSaved: "சுயவிவரம் புதுப்பிக்கப்பட்டது",
+    editProfile: "சுயவிவரத்தை திருத்து",
+  },
+  docs: {
+    title: "ஆவண சரிபார்ப்பு",
+    subtitle: "ஆவணங்களை பதிவேற்றுங்கள். OCR தானாகப் படித்து சரிபார்க்கும்.",
+    aadhaar: "ஆதார் அட்டை",
+    pan: "பான் அட்டை",
+    landRecord: "நில ஆவணம் (சிட்டா)",
+    bankPassbook: "வங்கி பாஸ்புக்",
+    upload: "பதிவேற்று",
+    uploaded: "பதிவேற்றிய ஆவணங்கள்",
+    status: "நிலை",
+    none: "இன்னும் ஆவணம் பதிவேற்றப்படவில்லை.",
+    verified: "சரிபார்க்கப்பட்டது",
+    processing: "செயலாக்கத்தில்",
+    rejected: "நிராகரிக்கப்பட்டது",
+    delete: "நீக்கு",
+    ocrNote:
+      "எங்கள் OCR + NLP கோப்பிலிருந்து உங்கள் ஐடி எண், பெயரை பிரித்தெடுத்து சரிபார்க்கிறது.",
+    idNumber: "பிரித்தெடுத்த ஐடி",
+    holder: "வைத்திருப்பவர்",
+  },
+  booking: {
+    title: "கொள்முதல் ஸ்லாட் பதிவு",
+    subtitle: "மையம், நாள், நேரம் தேர்வு செய்யுங்கள்",
+    center: "கொள்முதல் மையம்",
+    day: "நாள்",
+    today: "இன்று",
+    tomorrow: "நாளை",
+    slot: "நேர ஸ்லாட்",
+    capacity: "கொள்ளளவு",
+    book: "இந்த ஸ்லாட்டை பதிவு செய்",
+    booked: "பதிவு",
+    full: "நிரம்பியது",
+    confirmTitle: "பதிவை உறுதிசெய்யுங்கள்",
+    confirmBody: "உடனடியாக வரிசை டோக்கனும் இடமும் கிடைக்கும்.",
+    cancel: "ரத்து",
+    confirm: "உறுதி",
+    bookedToast: "ஸ்லாட் பதிவு ஆனது! டோக்கன்",
+    alreadyBooked: "உங்களிடம் ஏற்கனவே ஒரு செயலில் பதிவு உள்ளது.",
+    needVerification: "ஸ்லாட் பதிவுக்கு ஆவணங்களை சரிபார்க்கவும்.",
+  },
+  queue: {
+    title: "நேரடி வரிசை",
+    subtitle: "கொள்முதல் மையத்தில் நேரலை நிலை",
+    token: "டோக்கன்",
+    center: "மையம்",
+    slotLabel: "ஸ்லாட்",
+    yourPosition: "உங்கள் இடம்",
+    total: "வரிசையில் மொத்தம்",
+    peopleAhead: "உங்களுக்கு முன் விவசாயிகள்",
+    active: "உங்கள் முறை வருகிறது — தயாராகுங்கள்!",
+    waiting: "உங்கள் முறைக்காக காத்திருங்கள். SMS மூலம் தெரிவிப்போம்.",
+    noneActive: "செயலில் பதிவு இல்லை",
+    noneActiveBody: "நேரலை இடத்தைப் பார்க்க ஸ்லாட் பதிவு செய்யுங்கள்.",
+    bookNow: "இப்போது ஸ்லாட் பதிவு",
+    cancelBooking: "பதிவை ரத்து செய்",
+    cancelledToast: "பதிவு ரத்தானது",
+    history: "முந்தைய பதிவுகள்",
+    historyEmpty: "முந்தைய பதிவு இல்லை.",
+  },
+  prices: {
+    title: "இன்றைய ஆதரவு விலை",
+    subtitle: "குவின்டால் ஒன்றுக்கு குறைந்தபட்ச ஆதரவு விலை (MSP)",
+    crop: "பயிர்",
+    price: "விலை / குவின்டால்",
+    updated: "புதுப்பிப்பு",
+    searchPlaceholder: "பயிர்களைத் தேடு…",
+  },
+  history: {
+    title: "பரிவர்த்தனை வரலாறு",
+    subtitle: "விற்ற பயிர்களுக்கான பணம்",
+    ref: "குறிப்பு",
+    crop: "பயிர்",
+    qty: "அளவு (குவின்டால்)",
+    rate: "விலை (₹/குவின்டால்)",
+    amount: "தொகை",
+    status: "நிலை",
+    paid: "பணம் வந்தது",
+    pending: "நிலுவையில்",
+    empty: "இன்னும் பரிவர்த்தனை இல்லை.",
+    total: "மொத்தம் பெற்றது",
+    totalPending: "பணம் எதிர்பார்க்கப்படுகிறது",
+  },
+  support: {
+    title: "தொடர்பு & உதவி",
+    subtitle: "உங்களுக்கு உதவ நாங்கள் இருக்கிறோம்",
+    helpline: "உதவி எண் (இலவசம்)",
+    email: "மின்னஞ்சல்",
+    office: "அலுவலகம்",
+    officeAddr: "புண்டேல்கண்ட் பொறியியல் நிறுவனம் (BIET), ஜான்சி, உ.பி. 284128",
+    hours: "திங்க–சனி, காலை 8 – மாலை 6",
+    faq: "அடிக்கடி கேட்கப்படும் கேள்விகள்",
+    rate: "உங்கள் அனுபவத்தை மதிப்பிடுங்கள்",
+    rateThanks: "உங்கள் கருத்துக்கு நன்றி!",
+    faq1: "எனக்கு என்ன ஆவணங்கள் தேவை?",
+    faq1Body:
+      "ஆதார், பான், நில ஆவணம், வங்கி பாஸ்புக். ஆவணங்கள் பகுதியில் பதிவேற்றுங்கள்.",
+    faq2: "பணம் எப்போது கிடைக்கும்?",
+    faq2Body:
+      "கொள்முதலுக்கு 3 வேலை நாட்களில் பணம் வந்துவிடும். பரிவர்த்தனை வரலாற்றில் பாருங்கள்.",
+    faq3: "ஸ்லாட்டை மாற்றலாமா?",
+    faq3Body:
+      "ஆம் — செயலில் பதிவை ரத்து செய்து, உங்கள் முறைக்கு முன் வேறு ஸ்லாட் பதிவு செய்யலாம்.",
+  },
+  profile: {
+    title: "சுயவிவரம்",
+    subtitle: "உங்கள் கிசான் சேது அடையாளம்",
+    personal: "தனிப்பட்ட விவரங்கள்",
+    verification: "சரிபார்ப்பு",
+    member: "உறுப்பினரானது",
+    notRegistered: "இன்னும் பதிவு இல்லை",
+  },
+  settings: {
+    title: "அமைப்புகள்",
+    subtitle: "மொழி, பயன்முறை மற்றும் தோற்றம்",
+    language: "மொழி",
+    langHint: "முழு செயலிக்கும் மொழியைத் தேர்வு செய்யுங்கள்",
+    easyMode: "எளிய பயன்முறை",
+    easyModeHint: "பெரிய எழுத்து, பொத்தான்கள்; எளிய சொற்கள் — புதிய பயனர்களுக்கு",
+    theme: "தீம்",
+    light: "லைட்",
+    dark: "டார்க்",
+    about: "கிசான் சேது பற்றி",
+    aboutBody:
+      "கிசான் சேது விவசாயிகளை அரசு கொள்முதல் மையங்களுடன் நேரடியாக இணைக்கிறது: ஒருமுறை பதிவு, ஆவண சரிபார்ப்பு, ஸ்லாட் பதிவு, வரிசை மற்றும் பணம் கண்காணிப்பு — எல்லாம் உங்கள் போனிலிருந்தே.",
+  },
+  easy: {
+    enable: "எளிய பயன்முறை",
+    on: "எளிய பயன்முறை இயக்கத்தில்",
+    onBody:
+      "பெரிய எழுத்து, எளிய சொற்கள், ஒரு-தட்டு செயல்கள். அணைக்க நட்சத்திர பட்டனை மீண்டும் அழுத்துங்கள்.",
+    voiceHint: "குறிப்பு: தட்டச்சுக்கு பதிலாக பேச கிசான் மித்ராவில் மைக் அழுத்துங்கள்.",
+  },
+  receipt: {
+    title: "பணம் ரசீது",
+    view: "ரசீது",
+    download: "பதிவிறக்கு",
+    print: "அச்சிடு",
+    header: "அரசு கொள்முதல் ரசீது",
+    ref: "ரசீது எண்",
+    farmer: "விவசாயி",
+    paidVia: "பதிவு செய்யப்பட்ட வங்கி கணக்குக்கு DBT மூலம் பணம்",
+    issued: "வழங்கப்பட்டது",
+    token: "வரிசை டோக்கன்",
+    footer: "இது கணினி-உருவாக்க ரசீது; கையொப்பம் தேவையில்லை.",
+    support: "கேள்வி? அழைக்கவும் 1800-180-1551",
+  },
+  chat: {
+    title: "கிசான் மித்ரா",
+    subtitle: "AI உதவியாளர் · உங்கள் மொழியில் பதில்",
+    placeholder: "எதையும் கேளுங்கள்…",
+    send: "அனுப்பு",
+    listening: "கேட்கிறேன்… பேசுங்கள்",
+    thinking: "யோசிக்கிறேன்…",
+    micBlocked: "மைக் இல்லை. கேள்வியை தட்டச்சு செய்யுங்கள்.",
+    greeting:
+      "வணக்கம்! நான் கிசான் மித்ரா 🙏 விலை, ஸ்லாட் பதிவு, ஆவணங்கள், பணம் பற்றி கேளுங்கள்.",
+    quick: "இவற்றைக் கேளுங்கள்",
+    q1: "இன்று கோதுமை MSP என்ன?",
+    q2: "ஸ்லாட் எப்படி பதிவு செய்வது?",
+    q3: "என் பணம் எப்போது வரும்?",
+    q4: "எனக்கு என்ன ஆவணங்கள் தேவை?",
+    aiNote: "AI பதில்களில் தவறு இருக்கலாம். முக்கிய விவரங்களை மையத்தில் உறுதிசெய்யுங்கள்.",
+    open: "கிசான் மித்ராவிடம் கேளுங்கள்",
+    readAloud: "பதில்களை வாசித்துக் காட்டு",
+    offline: "ஆஃப்லைன் பதில் (AI கீ அமைக்கவில்லை)",
+    error: "மன்னிக்கவும், பதில் கிடைக்கவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  },
+  common: {
+    loading: "ஏற்றுகிறது…",
+    save: "சேமி",
+    cancel: "ரத்து",
+    close: "மூடு",
+    viewAll: "அனைத்தையும் பார்",
+    dashboard: "டாஷ்போர்டு",
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/* తెలుగు — Telugu                                                     */
+/* ------------------------------------------------------------------ */
+
+const te: Overrides = {
+  brand: "కిసాన్ సేతువు",
+  tagline: "న్యాయమైన కొనుగోలుకు మీ ప్రత్యక్ష వంతెన",
+  nav: {
+    home: "హోమ్",
+    register: "నమోదు",
+    documents: "పత్రాలు",
+    bookSlot: "స్లాట్ బుక్ చేయండి",
+    queue: "ప్రత్యక్ష క్యూ",
+    prices: "ధరలు",
+    history: "చరిత్ర",
+    support: "సహాయం",
+    profile: "ప్రొఫైల్",
+    settings: "సెట్టింగ్‌లు",
+    about: "గురించి",
+    logout: "లాగ్ అవుట్",
+  },
+  landing: {
+    heroTitle: "మీ పంటను అమ్ముకోండి. క్యూను దాటండి.",
+    heroSub:
+      "కిసాన్ సేతువు ప్రతి రైతుకు ధృవీకరించిన ప్రొఫైల్, బుక్ చేసిన స్లాట్, ప్రత్యక్ష క్యూ స్థానాన్ని ఇస్తుంది — కొనుగోలు కేంద్రంలో పగలంతా వేచి ఉండాల్సిన అవసరం లేదు.",
+    ctaPrimary: "రైతుగా నమోదు చేసుకోండి",
+    ctaSecondary: "సైన్ ఇన్ చేయండి",
+    statFarmers: "నమోదైన రైతులు",
+    statCentres: "కొనుగోలు కేంద్రాలు",
+    statSlots: "ఈరోజు బుక్ అయిన స్లాట్‌లు",
+    featuresTitle: "అంతా ఒకే చోట",
+    featuresSub: "నమోదు నుంచి చెల్లింపు వరకు — మీకు, కొనుగోలు కేంద్రానికి మధ్య ఒకే వంతెన.",
+    feature1Title: "నిమిషాల్లో ధృవీకరణ",
+    feature1Body:
+      "ఆధార్, భూమి రికార్డు, బ్యాంక్ పాస్‌బుక్ అప్‌లోడ్ చేయండి. మా OCR పైప్‌లైన్ పత్రాలు చదివి స్వయంగా ధృవీకరిస్తుంది.",
+    feature2Title: "మీ స్లాట్ బుక్ చేయండి",
+    feature2Body:
+      "కేంద్రం, రోజు, మీకు అనుకూలమైన గంట స్లాట్ ఎంచుకోండి. సామర్థ్యం ప్రత్యక్షంగా కనిపిస్తుంది — ఉదయం 5 గంటల క్యూ లేదు.",
+    feature3Title: "మీ స్థానం తెలుసుకోండి",
+    feature3Body:
+      "మీ ముందు ఎంతమంది రైతులున్నారో చూడండి, మీ వరుస దగ్గరైనప్పుడు SMS పొందండి.",
+    feature4Title: "కిసాన్ మిత్ర — AI సహాయకుడు",
+    feature4Body:
+      "వాయిస్‌తో లేదా టైప్ చేసి అడగండి, మీ భాషలో వెంటనే సమాధానం పొందండి — ధరలు, స్లాట్‌లు, పత్రాలు, చెల్లింపుల గురించి.",
+    feature5Title: "అందరికీ ఈజీ మోడ్",
+    feature5Body:
+      "పెద్ద బటన్లు, సులభమైన పదాలు, చదివి వినిపించే సమాధానాలు — మొదటిసారి ఇంటర్నెట్ వాడేవారికి.",
+    feature6Title: "వెంటనే చెల్లింపు రసీదు",
+    feature6Body: "చెల్లింపు అయిన వెంటనే ప్రతి అమ్మకానికి రసీదును డౌన్‌లోడ్ చేసి ప్రింట్ చేయండి.",
+    langs: "ఇప్పుడు 6 భాషల్లో — English, हिंदी, मराठी, বাংলা, தமிழ், తెలుగు",
+    highlight1Title: "ప్రత్యక్ష క్యూ, గందరగోళం లేదు",
+    highlight1Body:
+      "మీ ముందున్న రైతులు ఎప్పుడు పూర్తవుతున్నారో చూస్తూ ఉండండి — మీ వరుసకే వెళ్లండి.",
+    highlight2Title: "నమ్మకమైన చెల్లింపులు",
+    highlight2Body:
+      "ప్రతి అమ్మకం తూకం నుంచి బ్యాంక్ బదిలీ వరకు ట్రాక్ అవుతుంది; MSP ధరలు యాప్‌లోనే.",
+    howTitle: "ఇది ఎలా పనిచేస్తుంది",
+    how1: "ఖాతా సృష్టించండి",
+    how1Body: "మీ ఇమెయిల్‌తో సైన్ ఇన్ చేయండి — 30 సెకన్లే.",
+    how2: "నమోదు & ధృవీకరణ",
+    how2Body: "వివరాలు నింపి పత్రాలు అప్‌లోడ్ చేయండి.",
+    how3: "స్లాట్ బుక్ చేయండి",
+    how3Body: "కేంద్రం, రోజు, సమయం ఎంచుకోండి. క్యూ టోకెన్ వెంటనే వస్తుంది.",
+    how4: "అమ్మి డబ్బు పొందండి",
+    how4Body: "సమయానికి కేంద్రానికి వెళ్లండి. చెల్లింపు స్థితి యాప్‌లో కనిపిస్తుంది.",
+    ctaTitle: "సరైన ధరకు అమ్మడానికి సిద్ధమా?",
+    ctaBody: "వేలమంది రైతులు ఇప్పటికే కిసాన్ సేతువు వాడుతున్నారు.",
+    footerNote: "బుందేల్‌ఖండ్ రైతుల కోసం · BIET జాన్సీ",
+  },
+  auth: {
+    title: "కిసాన్ సేతువుకు స్వాగతం",
+    subtitle: "కొనసాగించడానికి మీ ఇమెయిల్‌తో సైన్ ఇన్ చేయండి",
+    emailLabel: "ఇమెయిల్ చిరునామా",
+    sendCode: "కోడ్ పంపండి",
+    codeSent: "6 అంకెల కోడ్ పంపాము",
+    verify: "ధృవీకరించి సైన్ ఇన్ చేయండి",
+    tryAgain: "మళ్లీ ప్రయత్నించండి",
+    changeEmail: "వేరే ఇమెయిల్ వాడండి",
+    or: "లేదా",
+    guest: "అతిథిగా కొనసాగండి",
+    secured: "freebuff.com ద్వారా రక్షితం",
+  },
+  home: {
+    greeting: "తిరిగి స్వాగతం",
+    notRegistered: "స్లాట్ బుక్ చేయడానికి మీ నమోదు పూర్తి చేయండి.",
+    registerNow: "ఇప్పుడే నమోదు చేయండి",
+    verificationPending: "ధృవీకరణ పెండింగ్",
+    verificationPendingBody:
+      "మీ పత్రాల సమీక్ష జరుగుతోంది. ధృవీకరణ అయిన వెంటనే స్లాట్ బుకింగ్ తెరుచుకుంటుంది.",
+    verified: "ధృవీకరించిన రైతు",
+    verifiedBody: "అంతా సిద్ధం — స్లాట్ బుక్ చేసి మీ పంట అమ్ముకోండి.",
+    activeBooking: "క్రియాశీల బుకింగ్",
+    noBooking: "క్రియాశీల బుకింగ్ లేదు",
+    noBookingBody: "మీరు ఇంకా స్లాట్ బుక్ చేయలేదు.",
+    position: "మీ స్థానం",
+    ahead: "రైతులు మీ ముందున్నారు",
+    of: "లో",
+    inQueue: "క్యూలో",
+    quickActions: "త్వరిత చర్యలు",
+    bookSlot: "స్లాట్ బుక్",
+    uploadDoc: "పత్రాలు అప్‌లోడ్",
+    viewPrices: "ఈరోజు ధరలు",
+    statDocs: "పత్రాలు",
+    statTx: "లావాదేవీలు",
+    recentTx: "ఇటీవలి చెల్లింపులు",
+    noTx: "ఇంకా లావాదేవీలు లేవు.",
+  },
+  register: {
+    title: "రైతు నమోదు",
+    subtitle: "మీ కిసాన్ సేతువు ప్రొఫైల్ వివరాలు",
+    name: "పూర్తి పేరు",
+    phone: "మొబైల్ నంబర్",
+    village: "గ్రామం",
+    district: "జిల్లా",
+    state: "రాష్ట్రం",
+    land: "భూమి (ఎకరాల్లో)",
+    save: "సేవ్ చేసి కొనసాగించండి",
+    saved: "నమోదు సేవ్ అయింది",
+    updateSaved: "ప్రొఫైల్ అప్‌డేట్ అయింది",
+    editProfile: "ప్రొఫైల్ సవరించండి",
+  },
+  docs: {
+    title: "పత్ర ధృవీకరణ",
+    subtitle: "మీ పత్రాలు అప్‌లోడ్ చేయండి. OCR స్వయంగా చదివి ధృవీకరిస్తుంది.",
+    aadhaar: "ఆధార్ కార్డు",
+    pan: "పాన్ కార్డు",
+    landRecord: "భూమి రికార్డు (పట్టాదార్)",
+    bankPassbook: "బ్యాంక్ పాస్‌బుక్",
+    upload: "అప్‌లోడ్",
+    uploaded: "అప్‌లోడ్ చేసిన పత్రాలు",
+    status: "స్థితి",
+    none: "ఇంకా పత్రాలు అప్‌లోడ్ చేయలేదు.",
+    verified: "ధృవీకరించబడింది",
+    processing: "ప్రక్రియలో",
+    rejected: "తిరస్కరించబడింది",
+    delete: "తొలగించు",
+    ocrNote:
+      "మా OCR + NLP పైప్‌లైన్ ఫైల్ నుంచి మీ ఐడీ నంబర్, పేరు తీసి ధృవీకరిస్తుంది.",
+    idNumber: "తీసిన ఐడీ",
+    holder: "హోల్డర్",
+  },
+  booking: {
+    title: "కొనుగోలు స్లాట్ బుక్ చేయండి",
+    subtitle: "కేంద్రం, రోజు, సమయం ఎంచుకోండి",
+    center: "కొనుగోలు కేంద్రం",
+    day: "రోజు",
+    today: "ఈరోజు",
+    tomorrow: "రేపు",
+    slot: "సమయ స్లాట్",
+    capacity: "సామర్థ్యం",
+    book: "ఈ స్లాట్ బుక్ చేయండి",
+    booked: "బుక్",
+    full: "నిండింది",
+    confirmTitle: "బుకింగ్‌ను ఖరారు చేయండి",
+    confirmBody: "వెంటనే క్యూ టోకెన్, స్థానం వస్తాయి.",
+    cancel: "రద్దు",
+    confirm: "ఖరారు",
+    bookedToast: "స్లాట్ బుక్ అయింది! టోకెన్",
+    alreadyBooked: "మీకు ఇప్పటికే ఒక క్రియాశీల బుకింగ్ ఉంది.",
+    needVerification: "స్లాట్ బుక్ చేయడానికి పత్రాలు ధృవీకరించండి.",
+  },
+  queue: {
+    title: "ప్రత్యక్ష క్యూ",
+    subtitle: "కొనుగోలు కేంద్రంలో ప్రత్యక్ష స్థితి",
+    token: "టోకెన్",
+    center: "కేంద్రం",
+    slotLabel: "స్లాట్",
+    yourPosition: "మీ స్థానం",
+    total: "క్యూలో మొత్తం",
+    peopleAhead: "మీ ముందు రైతులు",
+    active: "మీ వరుస వస్తోంది — సిద్ధంగా ఉండండి!",
+    waiting: "మీ వరుస కోసం వేచి ఉండండి. SMS ద్వారా తెలియజేస్తాము.",
+    noneActive: "క్రియాశీల బుకింగ్ లేదు",
+    noneActiveBody: "ప్రత్యక్ష స్థానం చూడటానికి స్లాట్ బుక్ చేయండి.",
+    bookNow: "ఇప్పుడే స్లాట్ బుక్ చేయండి",
+    cancelBooking: "బుకింగ్ రద్దు చేయండి",
+    cancelledToast: "బుకింగ్ రద్దయింది",
+    history: "గత బుకింగ్‌లు",
+    historyEmpty: "గత బుకింగ్‌లు లేవు.",
+  },
+  prices: {
+    title: "ఈరోజు మద్దతు ధరలు",
+    subtitle: "క్వింటాల్‌కు కనిష్ఠ మద్దతు ధర (MSP)",
+    crop: "పంట",
+    price: "ధర / క్వింటాల్",
+    updated: "అప్‌డేట్",
+    searchPlaceholder: "పంటలు వెతకండి…",
+  },
+  history: {
+    title: "లావాదేవీ చరిత్ర",
+    subtitle: "అమ్మిన పంటలకు చెల్లింపులు",
+    ref: "రిఫరెన్స్",
+    crop: "పంట",
+    qty: "పరిమాణం (క్వింటాల్)",
+    rate: "రేటు (₹/క్వింటాల్)",
+    amount: "మొత్తం",
+    status: "స్థితి",
+    paid: "చెల్లించారు",
+    pending: "పెండింగ్",
+    empty: "ఇంకా లావాదేవీలు లేవు.",
+    total: "మొత్తం వచ్చింది",
+    totalPending: "చెల్లింపు వేచి ఉంది",
+  },
+  support: {
+    title: "సంప్రదింపు & సహాయం",
+    subtitle: "మీకు సహాయం చేయడానికి మేము ఉన్నాము",
+    helpline: "హెల్ప్‌లైన్ (టోల్ ఫ్రీ)",
+    email: "ఇమెయిల్",
+    office: "కార్యాలయం",
+    officeAddr: "బుందేల్‌ఖండ్ ఇన్‌స్టిట్యూట్ (BIET), జాన్సీ, యూపీ 284128",
+    hours: "సోమ–శని, ఉదయం 8 – సాయంత్రం 6",
+    faq: "తరచుగా అడిగే ప్రశ్నలు",
+    rate: "మీ అనుభవాన్ని రేట్ చేయండి",
+    rateThanks: "మీ అభిప్రాయానికి ధన్యవాదాలు!",
+    faq1: "నాకు ఏ పత్రాలు కావాలి?",
+    faq1Body:
+      "ఆధార్, పాన్, భూమి రికార్డు, బ్యాంక్ పాస్‌బుక్. పత్రాల ట్యాబ్‌లో అప్‌లోడ్ చేయండి.",
+    faq2: "చెల్లింపు ఎప్పుడు వస్తుంది?",
+    faq2Body:
+      "కొనుగోలు అయిన 3 పనిదినాల్లో చెల్లింపు జమ అవుతుంది. లావాదేవీ చరిత్రలో చూడండి.",
+    faq3: "స్లాట్ మార్చుకోవచ్చా?",
+    faq3Body:
+      "అవును — క్రియాశీల బుకింగ్ రద్దు చేసి, మీ వరుసకు ముందే వేరే స్లాట్ బుక్ చేయండి.",
+  },
+  profile: {
+    title: "ప్రొఫైల్",
+    subtitle: "మీ కిసాన్ సేతువు గుర్తింపు",
+    personal: "వ్యక్తిగత వివరాలు",
+    verification: "ధృవీకరణ",
+    member: "సభ్యులయ్యారు",
+    notRegistered: "ఇంకా నమోదు కాలేదు",
+  },
+  settings: {
+    title: "సెట్టింగ్‌లు",
+    subtitle: "భాష, మోడ్ మరియు రూపం",
+    language: "భాష",
+    langHint: "మొత్తం యాప్ కోసం భాష ఎంచుకోండి",
+    easyMode: "ఈజీ మోడ్",
+    easyModeHint: "పెద్ద టెక్స్ట్, బటన్లు; సులభమైన పదాలు — కొత్త వాడుకరులకు",
+    theme: "థీమ్",
+    light: "లైట్",
+    dark: "డార్క్",
+    about: "కిసాన్ సేతువు గురించి",
+    aboutBody:
+      "కిసాన్ సేతువు రైతులను ప్రభుత్వ కొనుగోలు కేంద్రాలతో నేరుగా కలుపుతుంది: ఒకసారి నమోదు, పత్రాల ధృవీకరణ, స్లాట్ బుకింగ్, క్యూ మరియు చెల్లింపు ట్రాకింగ్ — అంతా మీ ఫోన్ నుంచే.",
+  },
+  easy: {
+    enable: "ఈజీ మోడ్",
+    on: "ఈజీ మోడ్ ఆన్‌లో ఉంది",
+    onBody:
+      "పెద్ద టెక్స్ట్, సులభమైన పదాలు, ఒక్క ట్యాప్ చర్యలు. ఆపివేయడానికి నక్షత్ర చిహ్నాన్ని మళ్లీ నొక్కండి.",
+    voiceHint: "చిట్కా: టైప్ చేయకుండా మాట్లాడటానికి కిసాన్ మిత్రలో మైక్ నొక్కండి.",
+  },
+  receipt: {
+    title: "చెల్లింపు రసీదు",
+    view: "రసీదు",
+    download: "డౌన్‌లోడ్",
+    print: "ప్రింట్",
+    header: "ప్రభుత్వ కొనుగోలు రసీదు",
+    ref: "రసీదు నం.",
+    farmer: "రైతు",
+    paidVia: "నమోదైన బ్యాంక్ ఖాతాకు DBT ద్వారా చెల్లింపు",
+    issued: "జారీ",
+    token: "క్యూ టోకెన్",
+    footer: "ఇది కంప్యూటర్-ఉత్పాదిత రసీదు; సంతకం అవసరం లేదు.",
+    support: "ప్రశ్నా? కాల్ చేయండి 1800-180-1551",
+  },
+  chat: {
+    title: "కిసాన్ మిత్ర",
+    subtitle: "AI సహాయకుడు · మీ భాషలో సమాధానం",
+    placeholder: "ఏదైనా అడగండి…",
+    send: "పంపండి",
+    listening: "వింటున్నాను… మాట్లాడండి",
+    thinking: "ఆలోచిస్తున్నాను…",
+    micBlocked: "మైక్ అందుబాటులో లేదు. దయచేసి ప్రశ్న టైప్ చేయండి.",
+    greeting:
+      "నమస్తే! నేను కిసాన్ మిత్ర 🙏 ధరలు, స్లాట్ బుకింగ్, పత్రాలు, చెల్లింపుల గురించి అడగండి.",
+    quick: "ఇలా అడగండి",
+    q1: "ఈరోజు గోధుమ MSP ఎంత?",
+    q2: "స్లాట్ ఎలా బుక్ చేయాలి?",
+    q3: "నా చెల్లింపు ఎప్పుడు వస్తుంది?",
+    q4: "నాకు ఏ పత్రాలు కావాలి?",
+    aiNote: "AI సమాధానాల్లో తప్పులు ఉండవచ్చు. ముఖ్య వివరాలు కేంద్రంలో ఖరారు చేయండి.",
+    open: "కిసాన్ మిత్రను అడగండి",
+    readAloud: "సమాధానాలు చదివి వినిపించు",
+    offline: "ఆఫ్‌లైన్ సమాధానం (AI కీ సెట్ కాలేదు)",
+    error: "క్షమించండి, సమాధానం రాలేదు. మళ్లీ ప్రయత్నించండి.",
+  },
+  common: {
+    loading: "లోడ్ అవుతోంది…",
+    save: "సేవ్",
+    cancel: "రద్దు",
+    close: "మూసివేయి",
+    viewAll: "అన్నీ చూడండి",
+    dashboard: "డాష్‌బోర్డ్",
+  },
+};
+
+const OVERRIDES: Record<Exclude<Lang, "en">, Overrides> = {
+  hi,
+  mr,
+  bn,
+  ta,
+  te,
+};
+
+/* ------------------------------------------------------------------ */
+/* Provider                                                            */
+/* ------------------------------------------------------------------ */
+
 interface AppContext {
   lang: Lang;
   setLang: (l: Lang) => void;
   t: Dict;
   theme: Theme;
   setTheme: (t: Theme) => void;
+  easyMode: boolean;
+  setEasyMode: (v: boolean) => void;
 }
 
 const AppContext = createContext<AppContext | null>(null);
@@ -498,12 +1895,20 @@ function detectTheme(): Theme {
     : "light";
 }
 
+function detectLang(): Lang {
+  if (typeof window === "undefined") return "en";
+  const saved = localStorage.getItem("kisan-lang");
+  return LANGS.some((l) => l.code === saved) ? (saved as Lang) : "en";
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window === "undefined") return "en";
-    return localStorage.getItem("kisan-lang") === "hi" ? "hi" : "en";
-  });
+  const [lang, setLangState] = useState<Lang>(detectLang);
   const [theme, setThemeState] = useState<Theme>(detectTheme);
+  const [easyMode, setEasyModeState] = useState<boolean>(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem("kisan-easy") === "1",
+  );
 
   useEffect(() => {
     localStorage.setItem("kisan-lang", lang);
@@ -515,15 +1920,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem("kisan-easy", easyMode ? "1" : "0");
+    document.documentElement.classList.toggle("easy", easyMode);
+  }, [easyMode]);
+
   const value = useMemo<AppContext>(
     () => ({
       lang,
       setLang: setLangState,
-      t: lang === "hi" ? hi : en,
+      t: getDict(lang),
       theme,
       setTheme: setThemeState,
+      easyMode,
+      setEasyMode: setEasyModeState,
     }),
-    [lang, theme],
+    [lang, theme, easyMode],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
