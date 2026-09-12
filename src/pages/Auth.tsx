@@ -14,12 +14,17 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
+import { api } from "@/convex/_generated/api";
 import { useApp } from "@/lib/i18n";
 import { LangThemeControls } from "@/components/LangThemeControls";
+import { useMutation } from "convex/react";
+import { toast } from "sonner";
 import logo from "@/assets/logo.svg";
 import {
   ArrowRight,
+  BadgeCheck,
   ChevronLeft,
+  Landmark,
   Loader2,
   Mail,
   ShieldCheck,
@@ -43,6 +48,11 @@ function resolveRedirectAfterAuth(
   return fallback;
 }
 
+const DEMO_OFFICIALS = [
+  { email: "official@kisan.gov.in", code: "JH-AGRI-7788" },
+  { email: "verification.cell@kisan.gov.in", code: "UP-AGRI-3344" },
+];
+
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
   const { t, lang } = useApp();
@@ -56,12 +66,27 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"farmer" | "official">(() =>
+    new URLSearchParams(window.location.search).get("tab") === "official"
+      ? "official"
+      : "farmer",
+  );
+  const [officialEmail, setOfficialEmail] = useState("");
+  const [officialCode, setOfficialCode] = useState("");
+  const verifyOfficial = useMutation(api.officials.verifyAccessCode);
+  const seedOfficials = useMutation(api.officialsSeed.ensureOfficialsSeed);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    seedOfficials().catch(() => {});
+  }, [seedOfficials]);
+
+  useEffect(() => {
+    // Officials are redirected by handleOfficialOtpSubmit after the access
+    // code is verified — skip the auto-redirect for them.
+    if (!authLoading && isAuthenticated && tab === "farmer") {
       navigate(redirect);
     }
-  }, [authLoading, isAuthenticated, navigate, redirect]);
+  }, [authLoading, isAuthenticated, navigate, redirect, tab]);
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -119,6 +144,66 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  const handleOfficialSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Officials sign in with the same email-OTP flow; the access code is
+      // verified right after the user is authenticated.
+      const formData = new FormData(event.currentTarget);
+      const email = String(formData.get("email") ?? "").trim();
+      await signIn("email-otp", formData);
+      setOfficialEmail(email);
+      setStep({ email });
+    } catch (error) {
+      console.error("Official email sign-in error:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send verification code. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOfficialOtpSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData(event.currentTarget);
+      await signIn("email-otp", formData);
+      const res = await verifyOfficial({
+        email: officialEmail,
+        accessCode: officialCode,
+      });
+      if (!res.ok) {
+        setError(
+          res.reason === "not_found"
+            ? t.official.notFound
+            : t.official.badCode,
+        );
+        setOtp("");
+        setIsLoading(false);
+        return;
+      }
+      toast.success(t.official.dashTitle);
+      navigate("/official", { replace: true });
+    } catch (error) {
+      console.error("Official OTP verification error:", error);
+      setError(t.official.generic);
+      setOtp("");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* top bar */}
@@ -172,59 +257,150 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                   <CardTitle className="mt-4 text-xl">{t.auth.title}</CardTitle>
                   <CardDescription>{t.auth.subtitle}</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleEmailSubmit}>
-                  <CardContent className="space-y-4">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        name="email"
-                        placeholder="name@example.com"
-                        type="email"
-                        className="pl-9"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                    {error && (
-                      <p className="text-sm text-destructive">{error}</p>
-                    )}
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <>
-                          {t.auth.sendCode}
-                          <ArrowRight className="size-4" />
-                        </>
-                      )}
-                    </Button>
-                    <div className="relative py-1">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center">
-                        <span className="bg-card px-2 text-xs uppercase text-muted-foreground">
-                          {t.auth.or}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
+                  {/* role tabs */}
+                  <div className="mt-4 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+                    <button
                       type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleGuestLogin}
-                      disabled={isLoading}
+                      onClick={() => {
+                        setTab("farmer");
+                        setError(null);
+                      }}
+                      className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        tab === "farmer"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      <UserX className="size-4" />
-                      {t.auth.guest}
-                    </Button>
-                  </CardContent>
-                </form>
+                      <Wheat className="size-4" />
+                      {t.official.farmerTab}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTab("official");
+                        setError(null);
+                      }}
+                      className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        tab === "official"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Landmark className="size-4" />
+                      {t.official.tab}
+                    </button>
+                  </div>
+                </CardHeader>
+                {tab === "farmer" ? (
+                  <form onSubmit={handleEmailSubmit}>
+                    <CardContent className="space-y-4">
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          name="email"
+                          placeholder="name@example.com"
+                          type="email"
+                          className="pl-9"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      {error && (
+                        <p className="text-sm text-destructive">{error}</p>
+                      )}
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <>
+                            {t.auth.sendCode}
+                            <ArrowRight className="size-4" />
+                          </>
+                        )}
+                      </Button>
+                      <div className="relative py-1">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center">
+                          <span className="bg-card px-2 text-xs uppercase text-muted-foreground">
+                            {t.auth.or}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleGuestLogin}
+                        disabled={isLoading}
+                      >
+                        <UserX className="size-4" />
+                        {t.auth.guest}
+                      </Button>
+                    </CardContent>
+                  </form>
+                ) : (
+                  <form onSubmit={handleOfficialSubmit}>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-muted-foreground">
+                        <BadgeCheck className="size-4 shrink-0 text-primary" />
+                        {t.official.subtitle}
+                      </div>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          name="email"
+                          placeholder="official@kisan.gov.in"
+                          type="email"
+                          className="pl-9"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <div className="relative">
+                        <ShieldCheck className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={officialCode}
+                          onChange={(e) => setOfficialCode(e.target.value)}
+                          placeholder={t.official.codePlaceholder}
+                          className="pl-9"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      {error && (
+                        <p className="text-sm text-destructive">{error}</p>
+                      )}
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <>
+                            {t.auth.sendCode}
+                            <ArrowRight className="size-4" />
+                          </>
+                        )}
+                      </Button>
+                      <div className="rounded-lg bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">
+                        <p className="font-medium">{t.official.demoTitle}</p>
+                        {DEMO_OFFICIALS.map((d) => (
+                          <p key={d.email} className="mt-1 font-mono">
+                            {d.email} · {d.code}
+                          </p>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </form>
+                )}
               </>
             ) : (
               <>
@@ -237,7 +413,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </CardTitle>
                   <CardDescription>{step.email}</CardDescription>
                 </CardHeader>
-                <form onSubmit={handleOtpSubmit}>
+                <form
+                  onSubmit={
+                    tab === "official" ? handleOfficialOtpSubmit : handleOtpSubmit
+                  }
+                >
                   <CardContent className="space-y-4">
                     <input type="hidden" name="email" value={step.email} />
                     <input type="hidden" name="code" value={otp} />
@@ -293,7 +473,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         <Loader2 className="size-4 animate-spin" />
                       ) : (
                         <>
-                          {t.auth.verify}
+                          {tab === "official" ? t.official.signIn : t.auth.verify}
                           <ArrowRight className="size-4" />
                         </>
                       )}

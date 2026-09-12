@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Gauge,
   IndianRupee,
+  Landmark,
   Leaf,
   Radio,
   ShieldCheck,
@@ -52,6 +53,13 @@ export default function Landing() {
             <div className="hidden sm:block">
               <LangThemeControls />
             </div>
+            <Link
+              to="/auth?tab=official"
+              className="hidden items-center gap-1.5 text-xs font-medium text-emerald-200/80 transition-colors hover:text-white md:flex"
+            >
+              <Landmark className="size-3.5" />
+              {t.official.tab}
+            </Link>
             <Button
               asChild
               className="rounded-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400"

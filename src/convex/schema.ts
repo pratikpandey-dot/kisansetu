@@ -117,6 +117,21 @@ const schema = defineSchema(
       .index("by_farmer", ["farmerId"])
       .index("by_created", ["createdAt"]),
 
+    // Government officials — sign in on /auth with email + access code.
+    officials: defineTable({
+      email: v.string(),
+      name: v.string(),
+      designation: v.string(),
+      department: v.string(),
+      // e.g. "JH-AGRI-7788" — verified against input at sign-in
+      accessCode: v.string(),
+      // signed-in user linked at first access-code login
+      userId: v.optional(v.id("users")),
+      lastLoginAt: v.optional(v.number()),
+    })
+      .index("by_email", ["email"])
+      .index("by_user", ["userId"]),
+
     // Today's MSP rates shown on the Prices page.
     rates: defineTable({
       crop: v.string(),
