@@ -6,6 +6,7 @@ import { useApp, localeOf } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Mic,
   MicOff,
@@ -133,27 +134,41 @@ export function KisanMitra() {
 
   return (
     <>
-      {/* floating launcher */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-full bg-primary py-3 pr-5 pl-4 font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
-        >
-          <Sparkles className="size-5" />
-          {t.chat.open}
-        </button>
-      )}
+      {/* floating launcher — gradient + pulse ring */}
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            key="mitra-fab"
+            initial={{ opacity: 0, scale: 0.6, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.6, y: 16 }}
+            transition={{ type: "spring", stiffness: 320, damping: 20 }}
+            onClick={() => setOpen(true)}
+            className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 py-3 pr-5 pl-4 font-semibold text-white shadow-xl shadow-emerald-500/35 transition-shadow hover:shadow-2xl hover:shadow-emerald-500/45"
+          >
+            <span className="animate-pulse-ring absolute inset-0 rounded-full" />
+            <Sparkles className="relative size-5" />
+            <span className="relative">{t.chat.open}</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* panel */}
-      {open && (
-        <div
-          className={cn(
-            "bg-background fixed right-3 bottom-3 z-50 flex w-[calc(100vw-1.5rem)] max-w-sm flex-col overflow-hidden rounded-2xl border shadow-2xl",
-            easyMode && "text-lg",
-          )}
-        >
-          {/* header */}
-          <div className="flex items-center justify-between gap-2 bg-primary px-4 py-3 text-primary-foreground">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="mitra-panel"
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            className={cn(
+              "bg-background fixed right-3 bottom-3 z-50 flex w-[calc(100vw-1.5rem)] max-w-sm flex-col overflow-hidden rounded-2xl border shadow-2xl",
+              easyMode && "text-lg",
+            )}
+          >
+            {/* header */}
+            <div className="flex items-center justify-between gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-white">
             <div className="flex min-w-0 items-center gap-2.5">
               <Logo className="size-8 shrink-0 rounded-lg" />
               <div className="min-w-0 leading-tight">
@@ -268,8 +283,9 @@ export function KisanMitra() {
               {t.chat.aiNote}
             </p>
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

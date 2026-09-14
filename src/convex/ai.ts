@@ -5,7 +5,8 @@ import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import { createVlyIntegrations } from "@vly-ai/integrations";
 
-const MODEL = "gpt-4o-mini";
+const GEMINI_MODEL = "gemini-3.6-flash";
+const VLY_MODEL = "gpt-4o-mini";
 const HELPLINE = "1800-180-1551";
 
 const LANG_NAMES: Record<string, string> = {
@@ -17,18 +18,76 @@ const LANG_NAMES: Record<string, string> = {
   te: "Telugu (తెలుగు)",
 };
 
+/* ------------------------------------------------------------------ */
+/* LLM providers — Gemini first, vly fallback, null = offline          */
+/* ------------------------------------------------------------------ */
+
+async function completeWithGemini(
+  prompt: string,
+  system: string,
+): Promise<string | null> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": key,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.4,
+            // Thinking models budget thoughts from this pool — keep generous.
+            maxOutputTokens: 2048,
+            thinkingConfig: { thinkingLevel: "low" },
+          },
+        }),
+        signal: controller.signal,
+      },
+    );
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      candidates?: {
+        content?: { parts?: { text?: string; thought?: boolean }[] };
+      }[];
+    };
+    // Gemini 3 thinking models emit hidden reasoning parts (thought: true) —
+    // keep only the user-visible answer text.
+    const text =
+      data.candidates?.[0]?.content?.parts
+        ?.filter((p) => !p.thought)
+        .map((p) => p.text ?? "")
+        .join("")
+        .trim() ?? null;
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
 function vlyAi() {
   const key = process.env.VLY_INTEGRATION_KEY;
   if (!key) return null;
   return createVlyIntegrations({ deploymentToken: key }).ai;
 }
 
-async function complete(prompt: string, system: string): Promise<string | null> {
+async function completeWithVly(
+  prompt: string,
+  system: string,
+): Promise<string | null> {
   const ai = vlyAi();
   if (!ai) return null;
   try {
     const res = await ai.completion({
-      model: MODEL,
+      model: VLY_MODEL,
       messages: [
         { role: "system", content: system },
         { role: "user", content: prompt },
@@ -41,6 +100,13 @@ async function complete(prompt: string, system: string): Promise<string | null> 
   } catch {
     return null;
   }
+}
+
+async function complete(prompt: string, system: string): Promise<string | null> {
+  return (
+    (await completeWithGemini(prompt, system)) ??
+    (await completeWithVly(prompt, system))
+  );
 }
 
 /* ------------------------------------------------------------------ */

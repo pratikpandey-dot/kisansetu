@@ -31,7 +31,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Accessibility } from "lucide-react";
 
@@ -55,6 +56,7 @@ export function DashboardShell({
   const { user, signOut } = useAuth();
   const { t, lang, setLang, theme, setTheme, easyMode, setEasyMode } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const displayName =
@@ -245,7 +247,14 @@ export function DashboardShell({
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-        {children}
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          {children}
+        </motion.div>
       </main>
 
       <KisanMitra />
