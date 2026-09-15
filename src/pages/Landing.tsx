@@ -21,6 +21,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import logo from "@/assets/logo.svg";
+import { FarmerScene } from "@/components/FarmerScene";
 
 /* count-up hook for hero stats */
 function useCountUp(target: number, duration = 900) {
@@ -127,11 +128,12 @@ export default function Landing() {
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-emerald-950 to-transparent" />
         </div>
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mx-auto max-w-3xl text-center"
+            className="text-center lg:text-left"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -149,7 +151,7 @@ export default function Landing() {
             <p className="text-shimmer mx-auto mt-6 max-w-2xl bg-clip-text text-base leading-relaxed font-medium text-emerald-100/80 sm:text-lg">
               {t.landing.heroSub}
             </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
               <motion.div
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
@@ -179,6 +181,17 @@ export default function Landing() {
               </motion.div>
             </div>
           </motion.div>
+
+          {/* animated farmer scene */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 110, damping: 18, delay: 0.25 }}
+            className="mx-auto w-full max-w-md lg:max-w-none"
+          >
+            <FarmerScene />
+          </motion.div>
+          </div>
 
           {/* stats — count up */}
           <motion.div

@@ -371,6 +371,9 @@ const en = {
     listening: "Listening… speak now",
     thinking: "Thinking…",
     micBlocked: "Microphone not available. Please type your question.",
+    micAllow: "Allow microphone",
+    micDenied: "Microphone is blocked. Allow mic in your browser settings to speak.",
+    micGranted: "Microphone ready",
     greeting:
       "Namaste! I'm Kisan Mitra 🙏 Ask me about prices, slot booking, documents or payments.",
     quick: "Try asking",
@@ -767,6 +770,9 @@ const hi: Overrides = {
     listening: "सुन रहे हैं… बोलिए",
     thinking: "सोच रहा हूँ…",
     micBlocked: "माइक उपलब्ध नहीं। कृपया सवाल लिखें।",
+    micAllow: "माइक की अनुमति दें",
+    micDenied: "माइक ब्लॉक है। बोलने के लिए ब्राउज़र सेटिंग्स में माइक की अनुमति दें।",
+    micGranted: "माइक तैयार है",
     greeting:
       "नमस्ते! मैं किसान मित्र हूँ 🙏 भाव, स्लॉट बुकिंग, दस्तावेज़ या भुगतान के बारे में पूछें।",
     quick: "ये पूछें",
@@ -1120,6 +1126,9 @@ const mr: Overrides = {
     listening: "ऐकत आहे… बोला",
     thinking: "विचार करत आहे…",
     micBlocked: "मायक्रोफोन उपलब्ध नाही. कृपया प्रश्न टाईप करा.",
+    micAllow: "मायक्रोफोनची परवानगी द्या",
+    micDenied: "मायक परवानगी नाही. ब्राउझर सेटिंग्समध्ये मायक परवानगी द्या.",
+    micGranted: "मायक तयार आहे",
     greeting:
       "नमस्कार! मी किसान मित्र 🙏 भाव, स्लॉट बुकिंग, कागदपत्रे किंवा देयकांबद्दल विचारा.",
     quick: "हे विचारा",
@@ -1471,6 +1480,9 @@ const bn: Overrides = {
     listening: "শুনছি… বলুন",
     thinking: "ভাবছি…",
     micBlocked: "মাইক্রোফোন নেই। অনুগ্রহ করে প্রশ্ন টাইপ করুন।",
+    micAllow: "মাইক্রোফোনের অনুমতি দিন",
+    micDenied: "মাইক অনুমতি নেই। ব্রাউজার সেটিংসে মাইক অনুমতি দিন।",
+    micGranted: "মাইক প্রস্তুত",
     greeting:
       "নমস্কার! আমি কিসান মিত্র 🙏 দাম, স্লট বুকিং, নথিপত্র বা পেমেন্ট নিয়ে জিজ্ঞাসা করুন।",
     quick: "জিজ্ঞাসা করুন",
@@ -1826,6 +1838,9 @@ const ta: Overrides = {
     listening: "கேட்கிறேன்… பேசுங்கள்",
     thinking: "யோசிக்கிறேன்…",
     micBlocked: "மைக் இல்லை. கேள்வியை தட்டச்சு செய்யுங்கள்.",
+    micAllow: "மைக் அனுமதி வழங்கவும்",
+    micDenied: "மைக் அனுமதி இல்லை. பிரவுசர் அமைப்பில் மைக் அனுமதி கொடுக்கவும்.",
+    micGranted: "மைக் தயாராக உள்ளது",
     greeting:
       "வணக்கம்! நான் கிசான் மித்ரா 🙏 விலை, ஸ்லாட் பதிவு, ஆவணங்கள், பணம் பற்றி கேளுங்கள்.",
     quick: "இவற்றைக் கேளுங்கள்",
@@ -2181,6 +2196,9 @@ const te: Overrides = {
     listening: "వింటున్నాను… మాట్లాడండి",
     thinking: "ఆలోచిస్తున్నాను…",
     micBlocked: "మైక్ అందుబాటులో లేదు. దయచేసి ప్రశ్న టైప్ చేయండి.",
+    micAllow: "மைக் அனுமதி இவ்வஂடி",
+    micDenied: "மைக் அனுமதி லே஦ு. ஬்ரௌஜர் ସெட்டிஂଗ்ஸ்‌லோ மைக் அனுமதி இவ்வஂடி.",
+    micGranted: "மைக் ସிଦ்ଧமைவு அயிஂଦி",
     greeting:
       "నమస్తే! నేను కిసాన్ మిత్ర 🙏 ధరలు, స్లాట్ బుకింగ్, పత్రాలు, చెల్లింపుల గురించి అడగండి.",
     quick: "ఇలా అడగండి",

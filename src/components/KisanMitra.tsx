@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
@@ -8,14 +8,19 @@ import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Lock,
   Mic,
   MicOff,
+  ShieldCheck,
   Send,
   Sparkles,
   Volume2,
   VolumeX,
   X,
 } from "lucide-react";
+
+/** State of the browser microphone permission for this session. */
+type MicState = "unknown" | "granted" | "denied" | "unsupported";
 
 interface Msg {
   role: "user" | "assistant";
@@ -61,9 +66,67 @@ export function KisanMitra() {
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const [speakOn, setSpeakOn] = useState(false);
+  const [micState, setMicState] = useState<MicState>("unknown");
+  const [micBusy, setMicBusy] = useState(false);
   const recRef = useRef<SRInstance | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+
+  /* -------- microphone permission management -------- */
+
+  // Detect the current permission without prompting (where supported).
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (!getSpeechRecognition()) {
+        if (!cancelled) setMicState("unsupported");
+        return;
+      }
+      try {
+        const perm = await navigator.permissions.query({
+          name: "microphone" as PermissionName,
+        });
+        if (cancelled) return;
+        setMicState(perm.state === "granted" ? "granted" : perm.state === "denied" ? "denied" : "unknown");
+        perm.onchange = () =>
+          setMicState(perm.state === "granted" ? "granted" : perm.state === "denied" ? "denied" : "unknown");
+      } catch {
+        // Permissions API not available — stay "unknown", first mic tap will prompt.
+      }
+    };
+    void check();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Ask the browser for mic access up-front so the user sees ONE clear prompt.
+  const requestMicAccess = useCallback(async (): Promise<boolean> => {
+    if (micState === "granted") return true;
+    if (micState === "unsupported" || !navigator.mediaDevices?.getUserMedia) {
+      toast.error(t.chat.micBlocked);
+      return false;
+    }
+    setMicBusy(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((tr) => tr.stop()); // release immediately
+      setMicState("granted");
+      toast.success(t.chat.micGranted);
+      return true;
+    } catch (err) {
+      const name = (err as { name?: string })?.name ?? "";
+      setMicState(name === "NotAllowedError" || name === "SecurityError" ? "denied" : "unknown");
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        toast.error(t.chat.micDenied);
+      } else {
+        toast.error(t.chat.micBlocked);
+      }
+      return false;
+    } finally {
+      setMicBusy(false);
+    }
+  }, [micState, t.chat.micBlocked, t.chat.micDenied, t.chat.micGranted]);
 
   const speak = (text: string) => {
     if (!speakOn || !("speechSynthesis" in window)) return;
@@ -104,9 +167,10 @@ export function KisanMitra() {
     }
   };
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
     const SR = getSpeechRecognition();
     if (!SR) {
+      setMicState("unsupported");
       toast.error(t.chat.micBlocked);
       return;
     }
@@ -114,6 +178,9 @@ export function KisanMitra() {
       recRef.current?.stop();
       return;
     }
+    // Secure permission first — surfaces the browser prompt on first use.
+    const ok = await requestMicAccess();
+    if (!ok) return;
     const rec = new SR();
     rec.lang = localeOf(lang);
     rec.continuous = false;
@@ -232,11 +299,53 @@ export function KisanMitra() {
               </div>
             )}
             <div ref={endRef} />
-          </div>
+          </div>            {/* mic permission bar — shown until granted */}
+            <AnimatePresence>
+              {micState !== "granted" && micState !== "unsupported" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden px-4 pb-2"
+                >
+                  <div
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl border px-3 py-2.5",
+                      micState === "denied"
+                        ? "border-red-500/30 bg-red-500/10"
+                        : "border-amber-500/30 bg-amber-500/10",
+                    )}
+                  >
+                    {micState === "denied" ? (
+                      <Lock className="size-4 shrink-0 text-red-500" />
+                    ) : (
+                      <Mic className="size-4 shrink-0 text-amber-500" />
+                    )}
+                    <span className="min-w-0 flex-1 text-[11px] leading-tight">
+                      {micState === "denied" ? t.chat.micDenied : t.chat.micAllow}
+                    </span>
+                    {micState !== "denied" && (
+                      <Button
+                        size="sm"
+                        className="h-7 shrink-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-[11px] font-semibold text-white"
+                        onClick={() => void requestMicAccess()}
+                        disabled={micBusy}
+                      >
+                        {micBusy ? (
+                          <span className="animate-pulse">···</span>
+                        ) : (
+                          t.chat.micAllow
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* quick questions */}
-          <div className="flex flex-wrap gap-1.5 px-4 pb-2">
-            {[t.chat.q1, t.chat.q2, t.chat.q3, t.chat.q4].map((q) => (
+            {/* quick questions */}
+            <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+              {[t.chat.q1, t.chat.q2, t.chat.q3, t.chat.q4].map((q) => (
               <button
                 key={q}
                 onClick={() => void ask(q)}
@@ -263,11 +372,29 @@ export function KisanMitra() {
               <Button
                 size="icon"
                 variant={listening ? "destructive" : "secondary"}
-                className="size-11 shrink-0 rounded-full"
-                onClick={toggleMic}
+                className={cn(
+                  "relative size-11 shrink-0 rounded-full",
+                  micState === "granted" &&
+                    !listening &&
+                    "ring-1 ring-emerald-500/40",
+                )}
+                onClick={() => void toggleMic()}
                 aria-label={t.chat.title}
+                title={
+                  micState === "granted"
+                    ? t.chat.micGranted
+                    : micState === "denied"
+                      ? t.chat.micDenied
+                      : undefined
+                }
               >
                 {listening ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                {micState === "granted" && !listening && (
+                  <span className="absolute -top-0.5 -right-0.5 flex size-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
+                  </span>
+                )}
               </Button>
               <Button
                 size="icon"
@@ -279,7 +406,8 @@ export function KisanMitra() {
                 <Send className="size-4" />
               </Button>
             </div>
-            <p className="mt-2 text-center text-[10px] leading-tight text-muted-foreground">
+            <p className="mt-2 flex items-center justify-center gap-1 text-center text-[10px] leading-tight text-muted-foreground">
+              <ShieldCheck className="size-3 shrink-0" />
               {t.chat.aiNote}
             </p>
           </div>
