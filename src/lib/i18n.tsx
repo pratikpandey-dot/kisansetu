@@ -407,6 +407,8 @@ const en = {
     micUnavailable: "Voice input is not supported in this browser. Please type your question.",
     micAllow: "Allow microphone",
     micDenied: "Microphone is blocked. Allow mic in your browser settings to speak.",
+    micIframe: "The preview frame blocks the microphone. Open Kisan Setu in a full browser tab to speak with Kisan Mitra.",
+    micOpenTab: "Open in new tab",
     micGranted: "Microphone ready",
     greeting:
       "Namaste! I'm Kisan Mitra 🙏 Ask me about prices, slot booking, documents or payments.",
@@ -840,6 +842,8 @@ const hi: Overrides = {
     micUnavailable: "इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है। कृपया सवाल लिखें।",
     micAllow: "माइक की अनुमति दें",
     micDenied: "माइक ब्लॉक है। बोलने के लिए ब्राउज़र सेटिंग्स में माइक की अनुमति दें।",
+    micIframe: "प्रीव्यू फ्रेम माइक को ब्लॉक करता है। मित्र से बोलकर बात करने के लिए किसान सेतु को पूरे टैब में खोलें।",
+    micOpenTab: "नए टैब में खोलें",
     micGranted: "माइक तैयार है",
     greeting:
       "नमस्ते! मैं किसान मित्र हूँ 🙏 भाव, स्लॉट बुकिंग, दस्तावेज़ या भुगतान के बारे में पूछें।",

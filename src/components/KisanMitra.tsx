@@ -8,6 +8,7 @@ import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ExternalLink,
   Lock,
   Mic,
   MicOff,
@@ -21,6 +22,15 @@ import {
 
 /** State of the browser microphone permission for this session. */
 type MicState = "unknown" | "granted" | "denied" | "unsupported";
+
+/** True when the app is embedded in an iframe — browsers often block the mic there. */
+function isInIframe(): boolean {
+  try {
+    return typeof window !== "undefined" && window.self !== window.top;
+  } catch {
+    return true; // cross-origin access to window.top throws → we are framed
+  }
+}
 
 interface Msg {
   role: "user" | "assistant";
@@ -69,6 +79,7 @@ export function KisanMitra() {
   const [micState, setMicState] = useState<MicState>("unknown");
   const [micBusy, setMicBusy] = useState(false);
   const [sttSupported, setSttSupported] = useState(true);
+  const [framed] = useState(isInIframe);
   const recRef = useRef<SRInstance | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
@@ -111,7 +122,7 @@ export function KisanMitra() {
   const requestMicAccess = useCallback(async (): Promise<boolean> => {
     if (micState === "granted") return true;
     if (micState === "unsupported" || typeof navigator.mediaDevices?.getUserMedia !== "function") {
-      toast.error(t.chat.micUnavailable);
+      toast.error(framed ? t.chat.micIframe : t.chat.micUnavailable);
       return false;
     }
     setMicBusy(true);
@@ -133,7 +144,7 @@ export function KisanMitra() {
     } finally {
       setMicBusy(false);
     }
-  }, [micState, t.chat.micBlocked, t.chat.micDenied, t.chat.micGranted, t.chat.micUnavailable]);
+  }, [micState, framed, t.chat.micBlocked, t.chat.micDenied, t.chat.micGranted, t.chat.micUnavailable, t.chat.micIframe]);
 
   const speak = (text: string) => {
     if (!speakOn || !("speechSynthesis" in window)) return;
@@ -160,6 +171,7 @@ export function KisanMitra() {
       open &&
       !autoAsked.current &&
       micState === "unknown" &&
+      !framed &&
       typeof navigator.mediaDevices?.getUserMedia === "function"
     ) {
       autoAsked.current = true;
@@ -188,7 +200,7 @@ export function KisanMitra() {
   const toggleMic = async () => {
     if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
       setMicState("unsupported");
-      toast.error(t.chat.micUnavailable);
+      toast.error(framed ? t.chat.micIframe : t.chat.micUnavailable);
       return;
     }
     const SR = getSpeechRecognition();
@@ -347,25 +359,44 @@ export function KisanMitra() {
                     <span className="min-w-0 flex-1 text-[11px] leading-tight">
                       {micState === "denied"
                         ? t.chat.micDenied
-                        : micState === "unsupported" || !sttSupported
-                          ? t.chat.micUnavailable
-                          : t.chat.micAllow}
+                        : framed && micState === "unknown"
+                          ? t.chat.micIframe
+                          : micState === "unsupported" || !sttSupported
+                            ? t.chat.micUnavailable
+                            : t.chat.micAllow}
                     </span>
                     {micState !== "denied" &&
                       micState !== "unsupported" &&
                       sttSupported && (
-                        <Button
-                          size="sm"
-                          className="h-7 shrink-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-[11px] font-semibold text-white"
-                          onClick={() => void requestMicAccess()}
-                          disabled={micBusy}
-                        >
-                          {micBusy ? (
-                            <span className="animate-pulse">···</span>
-                          ) : (
-                            t.chat.micAllow
-                          )}
-                        </Button>
+                        framed ? (
+                          <Button
+                            size="sm"
+                            className="h-7 shrink-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-[11px] font-semibold text-white"
+                            onClick={() =>
+                              window.open(
+                                window.location.href,
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            }
+                          >
+                            <ExternalLink className="mr-1 size-3" />
+                            {t.chat.micOpenTab}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="h-7 shrink-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-[11px] font-semibold text-white"
+                            onClick={() => void requestMicAccess()}
+                            disabled={micBusy}
+                          >
+                            {micBusy ? (
+                              <span className="animate-pulse">···</span>
+                            ) : (
+                              t.chat.micAllow
+                            )}
+                          </Button>
+                        )
                       )}
                   </div>
                 </motion.div>
