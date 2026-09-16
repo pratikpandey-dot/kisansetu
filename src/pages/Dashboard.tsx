@@ -6,6 +6,7 @@ import DocumentsPage from "./dashboard/DocumentsPage";
 import BookSlotPage from "./dashboard/BookSlotPage";
 import QueuePage from "./dashboard/QueuePage";
 import PricesPage from "./dashboard/PricesPage";
+import WeatherPage from "./dashboard/WeatherPage";
 import HistoryPage from "./dashboard/HistoryPage";
 import SupportPage from "./dashboard/SupportPage";
 import ProfilePage from "./dashboard/ProfilePage";
@@ -24,6 +25,7 @@ export default function Dashboard() {
         <Route path="book" element={<BookSlotPage />} />
         <Route path="queue" element={<QueuePage />} />
         <Route path="prices" element={<PricesPage />} />
+        <Route path="weather" element={<WeatherPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="support" element={<SupportPage />} />
         <Route path="profile" element={<ProfilePage />} />

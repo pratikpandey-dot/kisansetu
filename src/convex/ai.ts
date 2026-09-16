@@ -102,10 +102,56 @@ async function completeWithVly(
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* LLM provider 3 — OpenRouter (OPENROUTER_API_KEY)                    */
+/* ------------------------------------------------------------------ */
+
+const OPENROUTER_MODEL = "openai/gpt-4o-mini";
+
+async function completeWithOpenRouter(
+  prompt: string,
+  system: string,
+): Promise<string | null> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key || key.trim() === "" || key.includes("your_openrouter_key")) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key.trim()}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.CONVEX_SITE_URL ?? "https://kisansetu.app",
+        "X-Title": "Kisan Setu",
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.4,
+        max_tokens: 550,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 async function complete(prompt: string, system: string): Promise<string | null> {
   return (
     (await completeWithGemini(prompt, system)) ??
-    (await completeWithVly(prompt, system))
+    (await completeWithVly(prompt, system)) ??
+    (await completeWithOpenRouter(prompt, system))
   );
 }
 

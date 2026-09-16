@@ -68,9 +68,11 @@ export function KisanMitra() {
   const [speakOn, setSpeakOn] = useState(false);
   const [micState, setMicState] = useState<MicState>("unknown");
   const [micBusy, setMicBusy] = useState(false);
+  const [sttSupported, setSttSupported] = useState(true);
   const recRef = useRef<SRInstance | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const autoAsked = useRef(false);
 
   /* -------- microphone permission management -------- */
 
@@ -78,9 +80,14 @@ export function KisanMitra() {
   useEffect(() => {
     let cancelled = false;
     const check = async () => {
-      if (!getSpeechRecognition()) {
+      if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
+        // Not a secure context / no getUserMedia — mic truly unavailable.
         if (!cancelled) setMicState("unsupported");
         return;
+      }
+      if (!getSpeechRecognition()) {
+        // Mic hardware works; only browser voice-to-text is missing.
+        if (!cancelled) setSttSupported(false);
       }
       try {
         const perm = await navigator.permissions.query({
@@ -103,8 +110,8 @@ export function KisanMitra() {
   // Ask the browser for mic access up-front so the user sees ONE clear prompt.
   const requestMicAccess = useCallback(async (): Promise<boolean> => {
     if (micState === "granted") return true;
-    if (micState === "unsupported" || !navigator.mediaDevices?.getUserMedia) {
-      toast.error(t.chat.micBlocked);
+    if (micState === "unsupported" || typeof navigator.mediaDevices?.getUserMedia !== "function") {
+      toast.error(t.chat.micUnavailable);
       return false;
     }
     setMicBusy(true);
@@ -126,7 +133,7 @@ export function KisanMitra() {
     } finally {
       setMicBusy(false);
     }
-  }, [micState, t.chat.micBlocked, t.chat.micDenied, t.chat.micGranted]);
+  }, [micState, t.chat.micBlocked, t.chat.micDenied, t.chat.micGranted, t.chat.micUnavailable]);
 
   const speak = (text: string) => {
     if (!speakOn || !("speechSynthesis" in window)) return;
@@ -147,7 +154,18 @@ export function KisanMitra() {
       started.current = true;
       setMsgs([{ role: "assistant", content: t.chat.greeting }]);
     }
-  }, [open, t.chat.greeting]);
+    // Proactively ask for mic permission the first time the panel opens, so
+    // farmers see the browser prompt immediately instead of on first tap.
+    if (
+      open &&
+      !autoAsked.current &&
+      micState === "unknown" &&
+      typeof navigator.mediaDevices?.getUserMedia === "function"
+    ) {
+      autoAsked.current = true;
+      void requestMicAccess();
+    }
+  }, [open, t.chat.greeting, micState, requestMicAccess]);
 
   const ask = async (question: string) => {
     const q = question.trim();
@@ -168,10 +186,15 @@ export function KisanMitra() {
   };
 
   const toggleMic = async () => {
+    if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
+      setMicState("unsupported");
+      toast.error(t.chat.micUnavailable);
+      return;
+    }
     const SR = getSpeechRecognition();
     if (!SR) {
-      setMicState("unsupported");
-      toast.error(t.chat.micBlocked);
+      setSttSupported(false);
+      toast.error(t.chat.micUnavailable);
       return;
     }
     if (listening) {
@@ -301,7 +324,7 @@ export function KisanMitra() {
             <div ref={endRef} />
           </div>            {/* mic permission bar — shown until granted */}
             <AnimatePresence>
-              {micState !== "granted" && micState !== "unsupported" && (
+              {micState !== "granted" && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -322,22 +345,28 @@ export function KisanMitra() {
                       <Mic className="size-4 shrink-0 text-amber-500" />
                     )}
                     <span className="min-w-0 flex-1 text-[11px] leading-tight">
-                      {micState === "denied" ? t.chat.micDenied : t.chat.micAllow}
+                      {micState === "denied"
+                        ? t.chat.micDenied
+                        : micState === "unsupported" || !sttSupported
+                          ? t.chat.micUnavailable
+                          : t.chat.micAllow}
                     </span>
-                    {micState !== "denied" && (
-                      <Button
-                        size="sm"
-                        className="h-7 shrink-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-[11px] font-semibold text-white"
-                        onClick={() => void requestMicAccess()}
-                        disabled={micBusy}
-                      >
-                        {micBusy ? (
-                          <span className="animate-pulse">···</span>
-                        ) : (
-                          t.chat.micAllow
-                        )}
-                      </Button>
-                    )}
+                    {micState !== "denied" &&
+                      micState !== "unsupported" &&
+                      sttSupported && (
+                        <Button
+                          size="sm"
+                          className="h-7 shrink-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-[11px] font-semibold text-white"
+                          onClick={() => void requestMicAccess()}
+                          disabled={micBusy}
+                        >
+                          {micBusy ? (
+                            <span className="animate-pulse">···</span>
+                          ) : (
+                            t.chat.micAllow
+                          )}
+                        </Button>
+                      )}
                   </div>
                 </motion.div>
               )}
@@ -388,7 +417,13 @@ export function KisanMitra() {
                       : undefined
                 }
               >
-                {listening ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                {listening ? (
+                  <MicOff className="size-4" />
+                ) : micState === "unsupported" || !sttSupported ? (
+                  <MicOff className="size-4 opacity-60" />
+                ) : (
+                  <Mic className="size-4" />
+                )}
                 {micState === "granted" && !listening && (
                   <span className="absolute -top-0.5 -right-0.5 flex size-3">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />

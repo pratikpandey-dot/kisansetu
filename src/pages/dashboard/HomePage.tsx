@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { WeatherCard } from "@/components/WeatherCard";
 import {
   ArrowUpRight,
   CalendarClock,
@@ -267,6 +268,9 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* live weather strip */}
+      <WeatherCard compact />
 
       {/* stats + recent transactions */}
       <div className="grid gap-6 lg:grid-cols-2">

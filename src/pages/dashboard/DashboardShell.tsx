@@ -28,6 +28,7 @@ import {
   Sun,
   Tags,
   User,
+  CloudSun as WeatherIcon,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -44,6 +45,7 @@ const NAV = [
   { to: "/dashboard/book", key: "bookSlot", icon: CalendarClock },
   { to: "/dashboard/queue", key: "queue", icon: Scale },
   { to: "/dashboard/prices", key: "prices", icon: Tags },
+  { to: "/dashboard/weather", key: "weather", icon: WeatherIcon },
   { to: "/dashboard/history", key: "history", icon: Receipt },
   { to: "/dashboard/support", key: "support", icon: LifeBuoy },
 ] as const;
